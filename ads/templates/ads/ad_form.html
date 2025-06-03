@@ -57,15 +57,17 @@
                                 <div class="card">
                                     <img src="{{ image.get_image_url }}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="Image">
                                     <div class="card-body p-2">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            {% if image.is_main %}
+                                        <div class="d-flex justify-content-between align-items-center">                                            {% if image.is_main %}
                                                 <small class="text-success"><i class="fas fa-star"></i> Главное</small>
                                             {% else %}
                                                 <a href="{% url 'set_main_image' ad.pk image.id %}" class="btn btn-sm btn-outline-primary">Сделать главным</a>
                                             {% endif %}
-                                            <a href="{% url 'delete_ad_image' ad.pk image.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить это изображение?')">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
+                                            <div class="form-check form-check-inline ms-2">
+                                                <input type="checkbox" name="delete_image" value="{{ image.id }}" id="delete-image-{{ image.id }}" class="form-check-input">
+                                                <label for="delete-image-{{ image.id }}" class="form-check-label text-danger">
+                                                    <i class="fas fa-trash"></i> Удалить
+                                                </label>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -73,14 +75,19 @@
                             {% endfor %}
                         </div>
                     </div>
-                    {% endif %}
-
-                    <!-- Image formset section -->
+                    {% endif %}                    <!-- Image formset section -->
                     <div class="mb-3">
                         <label class="form-label">
                             {% if existing_images %}Добавить новые изображения{% else %}Изображения товара{% endif %}
                             <span class="text-muted">(до 5 изображений)</span>
                         </label>
+                        
+                        {% if not existing_images %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Добавьте хотя бы одно изображение товара
+                            </div>
+                        {% endif %}
                         
                         {{ image_formset.management_form }}
                         
@@ -99,7 +106,8 @@
                                                     <div class="drop-zone-text">
                                                         <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
                                                         <p class="mb-1">Перетащите файл сюда или <span class="text-primary">выберите файл</span></p>
-                                                        <p class="text-muted small">Максимум: 10MB. Форматы: JPG, PNG, GIF</p>
+                                                        <p class="text-muted small">Максимум: 5MB. Форматы: JPG, PNG, GIF</p>
+                                                        <p class="text-muted small">Изображения будут масштабированы до 500x500px</p>
                                                     </div>
                                                 </div>
                                                 {% for error in form.image_file.errors %}
@@ -141,11 +149,18 @@
                                     </div>
                                 </div>
                             </div>
+                            {% empty %}
+                            <!-- Показываем сообщение, если нет форм -->
+                            <div class="text-center py-4" id="no-images-message">
+                                <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">Изображения не добавлены</p>
+                                <p class="small text-muted">Нажмите кнопку ниже, чтобы добавить первое изображение</p>
+                            </div>
                             {% endfor %}
                         </div>
                         
                         <button type="button" id="add-image-form" class="btn btn-outline-primary">
-                            <i class="fas fa-plus"></i> Добавить еще изображение
+                            <i class="fas fa-plus"></i> Добавить изображение
                         </button>
                         
                         {% if image_formset.non_form_errors %}
@@ -407,17 +422,69 @@ document.addEventListener('DOMContentLoaded', function() {
     let formCount = parseInt(document.querySelector('#id_form-TOTAL_FORMS').value);
     const maxForms = 5;
     
+    // Получаем количество существующих изображений
+    const existingImagesCount = document.querySelectorAll('.card img[src]').length || 0;
+    const remainingSlots = maxForms - existingImagesCount;
+    
     // Initialize existing drop zones
     initializeDropZones();
     
-    // Add new form functionality
+    // Hide "no images" message if forms exist
+    updateNoImagesMessage();
+    
+    // Update add button visibility based on remaining slots
+    updateAddButtonVisibility();
+      // Add new form functionality
     document.getElementById('add-image-form').addEventListener('click', function() {
-        if (formCount < maxForms) {
+        const currentFormsCount = document.querySelectorAll('.image-form').length;
+        const totalImages = existingImagesCount + currentFormsCount;
+        
+        console.log(`Current forms: ${currentFormsCount}, existing images: ${existingImagesCount}, total: ${totalImages}`);
+        
+        if (totalImages < maxForms) {
             addImageForm();
+            updateNoImagesMessage();
+            updateAddButtonVisibility();
         } else {
-            alert('Максимальное количество изображений: ' + maxForms);
+            alert(`Максимальное количество изображений: ${maxForms}. У вас уже ${existingImagesCount} существующих изображений.`);
         }
     });
+      function updateNoImagesMessage() {
+        const noImagesMessage = document.getElementById('no-images-message');
+        const formsExist = document.querySelectorAll('.image-form').length > 0;
+        
+        if (noImagesMessage) {
+            noImagesMessage.style.display = formsExist ? 'none' : 'block';
+        }
+    }
+    
+    function updateAddButtonVisibility() {
+        const addButton = document.getElementById('add-image-form');
+        const currentFormsCount = document.querySelectorAll('.image-form').length;
+        const totalImages = existingImagesCount + currentFormsCount;
+        
+        if (addButton) {
+            if (totalImages >= maxForms) {
+                addButton.style.display = 'none';
+                // Добавляем сообщение о лимите
+                let limitMessage = document.getElementById('image-limit-message');
+                if (!limitMessage && existingImagesCount > 0) {
+                    limitMessage = document.createElement('div');
+                    limitMessage.id = 'image-limit-message';
+                    limitMessage.className = 'alert alert-warning mt-2';
+                    limitMessage.innerHTML = '<i class="fas fa-info-circle"></i> Достигнуто максимальное количество изображений (5)';
+                    addButton.parentNode.insertBefore(limitMessage, addButton.nextSibling);
+                }
+            } else {
+                addButton.style.display = 'inline-block';
+                // Убираем сообщение о лимите
+                const limitMessage = document.getElementById('image-limit-message');
+                if (limitMessage) {
+                    limitMessage.remove();
+                }
+            }
+        }
+    }
     
     function initializeDropZones() {
         document.querySelectorAll('.drop-zone').forEach(function(dropZone) {
@@ -693,10 +760,11 @@ document.addEventListener('DOMContentLoaded', function() {
             existingError.remove();
         }
     }
-    
-    function handleMultipleFiles(files, currentDropZone, currentFileInput, currentUrlInput, currentFormIndex) {
+      function handleMultipleFiles(files, currentDropZone, currentFileInput, currentUrlInput, currentFormIndex) {
         const maxFiles = 5;
         const currentFormsCount = document.querySelectorAll('.image-form').length;
+        
+        console.log(`Handling ${files.length} files, current forms: ${currentFormsCount}`);
         
         // Check if we can add all files
         if (currentFormsCount + files.length > maxFiles) {
@@ -781,72 +849,172 @@ document.addEventListener('DOMContentLoaded', function() {
             preview.remove();
         }
         dropZone.classList.remove('has-file');
-    }
-    
-    function addImageForm() {
+    }    function addImageForm() {
         const formsetDiv = document.getElementById('image-formset');
-        const emptyForm = document.querySelector('#empty-form');
         
-        if (!emptyForm) {
-            // Create a template for new forms
-            const template = document.querySelector('.image-form').cloneNode(true);
-            const newForm = template.cloneNode(true);
-            
-            // Update form indices
-            newForm.setAttribute('data-form-index', formCount);
-            newForm.innerHTML = newForm.innerHTML.replace(/form-\d+/g, `form-${formCount}`);
-            newForm.innerHTML = newForm.innerHTML.replace(/id_form-\d+/g, `id_form-${formCount}`);
-            
-            // Clear values
-            newForm.querySelectorAll('input').forEach(input => {
-                if (input.type !== 'checkbox') {
-                    input.value = '';
-                }
-                if (input.type === 'checkbox') {
-                    input.checked = false;
-                }
-            });
-            
-            // Add remove button
-            const cardBody = newForm.querySelector('.card-body');
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className = 'btn btn-outline-danger btn-sm mt-2';
-            removeBtn.innerHTML = '<i class="fas fa-times"></i> Удалить';
-            removeBtn.addEventListener('click', function() {
-                newForm.remove();
-                updateFormCount();
-            });
-            cardBody.appendChild(removeBtn);
-            
-            formsetDiv.appendChild(newForm);
-            
-            // Initialize drop zone for new form
-            const newDropZone = newForm.querySelector('.drop-zone');
-            const newFileInput = newForm.querySelector(`[id$="-image_file"]`);
-            const newUrlInput = newForm.querySelector(`[id$="-image_url"]`);
-            
-            if (newDropZone && newFileInput && newUrlInput) {
-                newDropZone.setAttribute('data-form-index', formCount);
-                setupDropZone(newDropZone, newFileInput, newUrlInput, formCount);
-            }
-            
-            formCount++;
+        console.log(`Adding new form with index: ${formCount}`);
+        
+        // Создаем новую форму с нуля
+        const newForm = document.createElement('div');
+        newForm.className = 'image-form mb-3';
+        newForm.setAttribute('data-form-index', formCount);
+        
+        newForm.innerHTML = `
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-upload"></i> Загрузить файл
+                            </label>
+                            <div class="drop-zone" data-form-index="${formCount}">
+                                <input type="file" name="form-${formCount}-image_file" accept="image/*" id="id_form-${formCount}-image_file" class="form-control">
+                                <div class="drop-zone-text">
+                                    <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                                    <p class="mb-1">Перетащите файл сюда или <span class="text-primary">выберите файл</span></p>
+                                    <p class="text-muted small">Максимум: 5MB. Форматы: JPG, PNG, GIF</p>
+                                    <p class="text-muted small">Изображения будут масштабированы до 500x500px</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">
+                                <i class="fas fa-link"></i> URL изображения
+                            </label>
+                            <input type="url" name="form-${formCount}-image_url" class="form-control" placeholder="Введите URL изображения" id="id_form-${formCount}-image_url">
+                            <small class="form-text text-muted">Или введите URL изображения</small>
+                            
+                            <div class="form-check mt-2">
+                                <input type="checkbox" name="form-${formCount}-is_main" class="form-check-input" id="id_form-${formCount}-is_main">
+                                <label class="form-check-label" for="id_form-${formCount}-is_main">
+                                    Главное изображение
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger btn-sm mt-2 remove-form-btn">
+                        <i class="fas fa-times"></i> Удалить
+                    </button>
+                </div>
+            </div>
+        `;
+          // Добавляем обработчик удаления
+        const removeBtn = newForm.querySelector('.remove-form-btn');
+        removeBtn.addEventListener('click', function() {
+            newForm.remove();
             updateFormCount();
+            updateNoImagesMessage();
+            updateAddButtonVisibility();
+        });
+        
+        formsetDiv.appendChild(newForm);
+        
+        // Initialize drop zone for new form
+        const newDropZone = newForm.querySelector('.drop-zone');
+        const newFileInput = newForm.querySelector(`#id_form-${formCount}-image_file`);
+        const newUrlInput = newForm.querySelector(`#id_form-${formCount}-image_url`);
+          if (newDropZone && newFileInput && newUrlInput) {
+            setupDropZone(newDropZone, newFileInput, newUrlInput, formCount);
+        }
+        
+        formCount++;
+        updateFormCount();
+    }    function updateFormCount() {
+        const totalForms = document.querySelectorAll('.image-form').length;
+        const totalFormsInput = document.querySelector('#id_form-TOTAL_FORMS');
+        
+        console.log(`Updating form count: ${totalForms}`);
+        
+        if (totalFormsInput) {
+            totalFormsInput.value = totalForms;
+        }
+        
+        // Update add button visibility using the new logic
+        updateAddButtonVisibility();
+    }
+    
+    // Main image exclusive selection handler
+    function setupMainImageHandler() {
+        // Handle main image checkboxes
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.name && e.target.name.includes('is_main') && e.target.type === 'checkbox') {
+                handleMainImageSelection(e.target);
+            }
+        });
+    }
+    
+    function handleMainImageSelection(clickedCheckbox) {
+        if (clickedCheckbox.checked) {
+            // Find all other main image checkboxes
+            const allMainCheckboxes = document.querySelectorAll('input[type="checkbox"][name*="is_main"]');
+            let hasOtherMain = false;
+            let otherMainCheckbox = null;
+            
+            allMainCheckboxes.forEach(function(checkbox) {
+                if (checkbox !== clickedCheckbox && checkbox.checked) {
+                    hasOtherMain = true;
+                    otherMainCheckbox = checkbox;
+                }
+            });
+            
+            if (hasOtherMain) {
+                // Show warning and confirm
+                const userConfirmed = confirm(
+                    'Главное изображение уже выбрано. Хотите сделать это изображение главным? ' +
+                    'Предыдущее главное изображение будет отменено.'
+                );
+                
+                if (userConfirmed) {
+                    // Uncheck other main images
+                    allMainCheckboxes.forEach(function(checkbox) {
+                        if (checkbox !== clickedCheckbox) {
+                            checkbox.checked = false;
+                        }
+                    });
+                    
+                    // Show success message
+                    showMainImageChangeMessage('Главное изображение изменено успешно!');
+                } else {
+                    // User cancelled, uncheck the clicked checkbox
+                    clickedCheckbox.checked = false;
+                }
+            } else {
+                // No other main image, show success
+                showMainImageChangeMessage('Изображение отмечено как главное!');
+            }
         }
     }
     
-    function updateFormCount() {
-        document.querySelector('#id_form-TOTAL_FORMS').value = document.querySelectorAll('.image-form').length;
-        
-        // Hide/show add button based on form count
-        const addButton = document.getElementById('add-image-form');
-        if (document.querySelectorAll('.image-form').length >= maxForms) {
-            addButton.style.display = 'none';
-        } else {
-            addButton.style.display = 'inline-block';
+    function showMainImageChangeMessage(message) {
+        // Remove existing message
+        const existingMsg = document.querySelector('.main-image-message');
+        if (existingMsg) {
+            existingMsg.remove();
         }
+        
+        // Create new message
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'main-image-message alert alert-info alert-dismissible fade show mt-2';
+        messageDiv.innerHTML = `
+            <i class="fas fa-star"></i> ${message}
+            <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        // Insert after the image formset
+        const formset = document.getElementById('image-formset');
+        formset.parentNode.insertBefore(messageDiv, formset.nextSibling);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.remove();
+            }
+        }, 3000);
     }
+    
+    // Initialize main image handler
+    setupMainImageHandler();
 });
 </script>
 {% endblock %}

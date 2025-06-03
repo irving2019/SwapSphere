@@ -65,27 +65,29 @@
                 </div>
                 <h5>Описание:</h5>
                 <p class="card-text">{{ ad.description|linebreaks }}</p>                <div class="mt-4">
-                    {% if user.is_authenticated and user != ad.user %}
-                        <a href="{% url 'create_proposal' ad.id %}" class="btn btn-primary">
-                            <i class="fas fa-exchange-alt"></i> Предложить обмен
-                        </a>
-                        <a href="{% url 'send_message' ad.user.id %}" class="btn btn-info">
-                            <i class="fas fa-envelope"></i> Написать сообщение
-                        </a>
-                    {% endif %}
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        {% if user.is_authenticated and user != ad.user %}
+                            <a href="{% url 'create_proposal' ad.id %}" class="btn btn-primary btn-lg px-4 py-2 rounded-pill shadow">
+                                <i class="fas fa-exchange-alt me-2"></i>Предложить обмен
+                            </a>
+                            <a href="{% url 'send_message' ad.user.id %}" class="btn btn-info btn-lg px-4 py-2 rounded-pill shadow">
+                                <i class="fas fa-envelope me-2"></i>Написать сообщение
+                            </a>
+                        {% endif %}
 
-                    {% if user == ad.user %}
-                        <a href="{% url 'ad_update' ad.id %}" class="btn btn-warning">
-                            <i class="fas fa-edit"></i> Редактировать
+                        {% if user == ad.user %}
+                            <a href="{% url 'ad_update' ad.id %}" class="btn btn-warning btn-lg px-4 py-2 rounded-pill shadow">
+                                <i class="fas fa-edit me-2"></i>Редактировать
+                            </a>
+                            <button type="button" class="btn btn-danger btn-lg px-4 py-2 rounded-pill shadow" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                <i class="fas fa-trash me-2"></i>Удалить
+                            </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'ad_list' %}" class="btn btn-secondary btn-lg px-4 py-2 rounded-pill shadow">
+                            <i class="fas fa-arrow-left me-2"></i>Назад к списку
                         </a>
-                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
-                            <i class="fas fa-trash"></i> Удалить
-                        </button>
-                    {% endif %}
-                    
-                    <a href="{% url 'ad_list' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Назад к списку
-                    </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -346,5 +348,79 @@ function deleteComment(commentId) {
     }
 }
 </script>
+
+<!-- Стили для радужных стрелочек карусели -->
+<style>
+.carousel-control-prev,
+.carousel-control-next {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #ff6b35, #f7931e, #ffd700, #00c851, #00bcd4, #673ab7);
+    background-size: 400% 400%;
+    animation: rainbow-pulse 3s ease-in-out infinite;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    opacity: 0.8;
+    transition: all 0.3s ease;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+.carousel-control-prev {
+    left: 15px;
+}
+
+.carousel-control-next {
+    right: 15px;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    width: 24px;
+    height: 24px;
+    filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.5));
+}
+
+@keyframes rainbow-pulse {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Дополнительное сияние при наведении */
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+    animation: rainbow-pulse 1.5s ease-in-out infinite, 
+               rainbow-glow 2s ease-in-out infinite;
+}
+
+@keyframes rainbow-glow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 107, 53, 0.6),
+                    0 0 30px rgba(247, 147, 30, 0.4),
+                    0 0 40px rgba(255, 215, 0, 0.3);
+    }
+    33% {
+        box-shadow: 0 0 20px rgba(0, 200, 81, 0.6),
+                    0 0 30px rgba(0, 188, 212, 0.4),
+                    0 0 40px rgba(103, 58, 183, 0.3);
+    }
+    66% {
+        box-shadow: 0 0 20px rgba(156, 39, 176, 0.6),
+                    0 0 30px rgba(233, 30, 99, 0.4),
+                    0 0 40px rgba(244, 67, 54, 0.3);
+    }
+}
+</style>
 
 {% endblock %}

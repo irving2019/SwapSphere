@@ -121,27 +121,30 @@
                                     <small class="text-muted">Текущий аватар</small>
                                 </div>
                             </div>
-                            
-                            <div class="mb-3">
+                              <div class="mb-3">
                                 <label for="{{ profile_form.avatar.id_for_label }}" class="form-label">Загрузить новый аватар</label>
                                 {{ profile_form.avatar }}
                                 {% if profile_form.avatar.errors %}
                                     <div class="text-danger small">{{ profile_form.avatar.errors }}</div>
-                                {% endif %}
-                                <div class="form-text">Максимальный размер: 5MB. Поддерживаемые форматы: JPG, PNG, GIF</div>
+                                {% endif %}                                <div class="form-text">Максимальный размер: 5MB. Поддерживаемые форматы: JPG, PNG, GIF. Изображения будут автоматически масштабированы до размера 500x500px.</div>
+                                <div id="avatar-preview" class="mt-2 text-center" style="display: none;">
+                                    <p class="mb-1"><strong>Предпросмотр загруженного аватара:</strong></p>
+                                    <img src="" alt="Предпросмотр аватара" class="rounded-circle" width="80" height="80" style="object-fit: cover; border: 2px solid #007bff;">
+                                </div>
                             </div>
                               <div class="mb-3">
                                 <label class="form-label">Или выберите стандартный аватар</label>
                                 <div class="row">
                                     {% for value, label in profile_form.default_avatar.field.choices %}
-                                        <div class="col-4 text-center mb-2">
-                                            <div class="form-check">
+                                        <div class="col-4 text-center mb-2">                                            <div class="form-check">
                                                 <input type="radio" 
                                                        name="{{ profile_form.default_avatar.name }}" 
                                                        value="{{ value }}" 
                                                        id="id_default_avatar_{{ forloop.counter0 }}"
-                                                       class="form-check-input"
-                                                       {% if profile_form.instance.default_avatar == value %}checked{% endif %}>                                <label for="id_default_avatar_{{ forloop.counter0 }}" class="form-check-label">
+                                                       class="form-check-input default-avatar-radio"
+                                                       data-avatar-path="{% static 'images/avatars/default/' %}{{ value }}"
+                                                       {% if profile_form.instance.default_avatar == value %}checked{% endif %}>
+                                                <label for="id_default_avatar_{{ forloop.counter0 }}" class="form-check-label">
                                                     <img src="{% static 'images/avatars/default/' %}{{ value }}" 
                                                          alt="{{ label }}" class="rounded-circle" width="50" height="50"
                                                          style="object-fit: cover; cursor: pointer;">
@@ -177,16 +180,43 @@
 </div>
 
 <script>
+// Предпросмотр загружаемого аватара
 document.getElementById('avatar-upload').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
+            // Обновляем текущий аватар
             const currentAvatar = document.getElementById('current-avatar');
-            currentAvatar.innerHTML = '<img src="' + e.target.result + '" alt="Предпросмотр" class="rounded-circle" width="120" height="120">';
-        }
+            currentAvatar.src = e.target.result;
+            
+            // Показываем предпросмотр загруженного файла
+            const previewDiv = document.getElementById('avatar-preview');
+            const previewImage = previewDiv.querySelector('img');
+            previewImage.src = e.target.result;
+            previewDiv.style.display = 'block';
+            
+            // Сброс выбранного стандартного аватара
+            const defaultAvatars = document.querySelectorAll('.default-avatar-radio');
+            defaultAvatars.forEach(radio => radio.checked = false);
+        };
         reader.readAsDataURL(file);
     }
+});
+
+// Предпросмотр выбранного стандартного аватара
+document.querySelectorAll('.default-avatar-radio').forEach(radio => {
+    radio.addEventListener('change', function() {
+        if (this.checked) {
+            const avatarPath = this.getAttribute('data-avatar-path');
+            const currentAvatar = document.getElementById('current-avatar');
+            currentAvatar.src = avatarPath;
+            
+            // Сбрасываем загруженный аватар
+            document.getElementById('avatar-upload').value = '';
+            document.getElementById('avatar-preview').style.display = 'none';
+        }
+    });
 });
 </script>
 {% endblock %}

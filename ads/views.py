@@ -19,7 +19,11 @@ def ad_list(request):
     condition = request.GET.get('condition')
     status = request.GET.get('status')
 
-    ads = Ad.objects.all().order_by('-created_at')
+    # Исключаем объявления с завершенными обменами
+    ads = Ad.objects.filter(
+        ~Q(sent_proposals__status='completed') & 
+        ~Q(received_proposals__status='completed')
+    ).distinct().order_by('-created_at')
 
     if search:
         ads = ads.filter(
@@ -80,6 +84,7 @@ def ad_create(request):
                 (image_form.cleaned_data.get('image_file') or image_form.cleaned_data.get('image_url'))
                 for image_form in image_formset
             )
+            
             if not has_images:
                 messages.error(request, 'Необходимо добавить хотя бы одно изображение.')
                 return render(request, 'ads/ad_form.html', {
@@ -88,28 +93,47 @@ def ad_create(request):
                     'title': 'Создать объявление'
                 })
             
+            # Сохраняем объявление
             ad = form.save(commit=False)
             ad.user = request.user
             ad.save()
             
             # Обрабатываем изображения
-            for i, image_form in enumerate(image_formset):
+            image_order = 0
+            first_image = True
+            for image_form in image_formset:
                 if (image_form.cleaned_data and not image_form.cleaned_data.get('DELETE', False) and
                     (image_form.cleaned_data.get('image_file') or image_form.cleaned_data.get('image_url'))):
                     
                     image_file = image_form.cleaned_data.get('image_file')
                     image_url = image_form.cleaned_data.get('image_url')
+                    is_main = image_form.cleaned_data.get('is_main', False)
+                    
+                    # Если не выбрано главное изображение явно, делаем первое главным
+                    if first_image and not any(f.cleaned_data.get('is_main', False) for f in image_formset if f.cleaned_data):
+                        is_main = True
                     
                     AdImage.objects.create(
                         ad=ad,
                         image_file=image_file,
                         image_url=image_url,
-                        is_main=(i == 0),  # Первое изображение главное
-                        order=i
+                        is_main=is_main,
+                        order=image_order
                     )
+                    
+                    image_order += 1
+                    first_image = False
             
             messages.success(request, 'Объявление успешно создано!')
             return redirect('ad_detail', pk=ad.pk)
+        else:
+            # Отладочная информация при ошибках валидации
+            if not form.is_valid():
+                print("Form errors:", form.errors)
+            if not image_formset.is_valid():
+                print("Formset errors:", image_formset.errors)
+                print("Formset non form errors:", image_formset.non_form_errors())
+    
     else:
         form = AdForm()
         image_formset = AdImageFormSet()
@@ -130,10 +154,25 @@ def ad_update(request, pk):
     if request.method == 'POST':
         form = AdForm(request.POST, instance=ad)
         image_formset = AdImageFormSet(request.POST, request.FILES)
+        
+        # Проверяем, были ли отмечены изображения для удаления
+        images_to_delete = request.POST.getlist('delete_image')
+        
         if form.is_valid() and image_formset.is_valid():
             ad = form.save()
             
+            # Удаляем выбранные изображения
+            if images_to_delete:
+                for image_id in images_to_delete:
+                    try:
+                        image = AdImage.objects.get(id=image_id, ad=ad)
+                        image.delete()
+                        messages.info(request, f'Изображение успешно удалено')
+                    except AdImage.DoesNotExist:
+                        pass
+            
             # Обрабатываем новые изображения из формсета
+            added_images = 0
             for i, image_form in enumerate(image_formset):
                 if (image_form.cleaned_data and not image_form.cleaned_data.get('DELETE', False) and
                     (image_form.cleaned_data.get('image_file') or image_form.cleaned_data.get('image_url'))):
@@ -146,15 +185,25 @@ def ad_update(request, pk):
                     
                     # Добавляем новое изображение только если не превышен лимит
                     if current_count < 5:
-                        AdImage.objects.create(
-                            ad=ad,
-                            image_file=image_file,
-                            image_url=image_url,
-                            is_main=(current_count == 0),
-                            order=current_count
-                        )
+                        try:
+                            AdImage.objects.create(
+                                ad=ad,
+                                image_file=image_file,
+                                image_url=image_url,
+                                is_main=(current_count == 0),
+                                order=current_count
+                            )
+                            added_images += 1
+                        except ValueError as e:
+                            messages.warning(request, f'Не удалось добавить изображение: {str(e)}')
+                    else:
+                        messages.warning(request, 'Достигнуто максимальное количество изображений (5)')
+                        break
             
-            messages.success(request, 'Объявление успешно обновлено!')
+            if added_images > 0:
+                messages.success(request, f'Объявление обновлено! Добавлено изображений: {added_images}')
+            else:
+                messages.success(request, 'Объявление успешно обновлено!')
             return redirect('ad_detail', pk=pk)
     else:
         form = AdForm(instance=ad)
@@ -220,6 +269,17 @@ def profile(request):
     
     user_ads = Ad.objects.filter(user=request.user).order_by('-created_at')
     
+    # Добавляем информацию о завершенных обменах для каждого объявления
+    for ad in user_ads:
+        # Проверяем, есть ли завершенные обмены для этого объявления
+        completed_exchange = ExchangeProposal.objects.filter(
+            Q(ad_sender=ad) | Q(ad_receiver=ad),
+            status='completed'
+        ).first()
+        ad.is_exchanged = completed_exchange is not None
+        if completed_exchange:
+            ad.exchange_date = completed_exchange.exchange_completed_at
+    
     # Подсчет непрочитанных предложений
     unread_received = ExchangeProposal.objects.filter(
         ad_receiver__user=request.user, 
@@ -265,6 +325,10 @@ def profile_edit(request):
     else:
         user_form = UserForm(instance=request.user)
         profile_form = UserProfileForm(instance=profile)
+        
+        # Правильно форматируем дату рождения для input[type="date"]
+        if profile.birth_date:
+            profile_form.fields['birth_date'].widget.attrs['value'] = profile.birth_date.strftime('%Y-%m-%d')
     
     context = {
         'user_form': user_form,
@@ -387,7 +451,6 @@ def update_proposal_status(request, proposal_id):
     proposal = get_object_or_404(ExchangeProposal, pk=proposal_id)
     
     action = request.POST.get('action')
-    
     # Проверяем права доступа в зависимости от действия
     if action in ['accept', 'reject']:
         if proposal.ad_receiver.user != request.user:
@@ -400,7 +463,19 @@ def update_proposal_status(request, proposal_id):
         if not proposal.can_be_cancelled():
             messages.error(request, 'Это предложение уже нельзя отменить')
             return redirect('proposal_list')
-      # Выполняем действие
+    elif action == 'complete':
+        # Проверка прав доступа для завершения обмена
+        # Оба пользователя должны подтвердить получение товара
+        if not proposal.sender_confirmed_exchange or not proposal.receiver_confirmed_exchange:
+            messages.error(request, 'Обе стороны должны подтвердить получение товара перед завершением обмена')
+            return redirect('proposal_list')
+        
+        # Проверяем, что пользователь участвует в обмене
+        if request.user != proposal.ad_sender.user and request.user != proposal.ad_receiver.user:
+            messages.error(request, 'У вас нет прав на завершение этого обмена')
+            return redirect('proposal_list')
+            
+    # Выполняем действие
     if action == 'accept':
         proposal.status = 'accepted'
         proposal.is_read_by_sender = False  # Уведомляем отправителя
@@ -414,7 +489,7 @@ def update_proposal_status(request, proposal_id):
         proposal.status = 'rejected'
         proposal.is_read_by_sender = False  # Уведомляем отправителя
         messages.success(request, 'Предложение обмена отклонено!')
-    elif action == 'cancel':
+    elif action == 'cancel':        
         proposal.status = 'cancelled'
         proposal.is_read_by_receiver = False  # Уведомляем получателя
         messages.success(request, 'Предложение обмена отменено!')
@@ -423,14 +498,18 @@ def update_proposal_status(request, proposal_id):
         if proposal.status != 'accepted':
             messages.error(request, 'Можно завершить только принятое предложение обмена.')
             return redirect('proposal_list')
+            
+        from django.utils import timezone
         
         proposal.status = 'completed'
+        proposal.exchange_completed_at = timezone.now()  # Устанавливаем время завершения обмена
+        
         # Изменяем статус объявлений на "обменен"
         proposal.ad_sender.status = 'exchanged'
         proposal.ad_receiver.status = 'exchanged'
         proposal.ad_sender.save()
         proposal.ad_receiver.save()
-        messages.success(request, 'Обмен завершен! Товары переведены в статус "Обменен".')
+        messages.success(request, 'Обмен успешно завершен и отправлен в архив! Товары помечены как обмененные.')
     
     proposal.save()
     return redirect('proposal_list')
@@ -473,11 +552,26 @@ def set_main_image(request, pk, image_id):
     
     # Снимаем флаг главного с других изображений
     ad.images.update(is_main=False)
+    
+    # Получаем все изображения и обновляем их порядок
+    all_images = list(ad.images.all().order_by('order'))
+    
+    # Удаляем выбранное изображение из списка
+    all_images.remove(image)
+    
+    # Добавляем выбранное изображение в начало списка
+    all_images.insert(0, image)
+    
+    # Обновляем порядок всех изображений
+    for i, img in enumerate(all_images):
+        img.order = i
+        img.save()
+    
     # Устанавливаем новое главное изображение
     image.is_main = True
     image.save()
     
-    messages.success(request, 'Главное изображение установлено!')
+    messages.success(request, 'Изображение установлено как главное и перемещено в начало!')
     return redirect('ad_update', pk=pk)
 
 @login_required
@@ -846,3 +940,55 @@ def notifications_api(request):
         })
     
     return JsonResponse({'error': 'Метод не поддерживается'}, status=405)
+
+@login_required
+def proposal_archive(request):
+    """Архив завершенных обменов"""
+    # Получаем только завершенные предложения
+    proposals = ExchangeProposal.objects.filter(
+        Q(ad_sender__user=request.user) | Q(ad_receiver__user=request.user),
+        status='completed'
+    ).select_related('ad_sender', 'ad_receiver', 'ad_sender__user', 'ad_receiver__user').order_by('-exchange_completed_at')
+    
+    context = {
+        'proposals': proposals,
+        'title': 'Архив обменов'
+    }
+    return render(request, 'ads/proposal_archive.html', context)
+
+@login_required
+def confirm_exchange(request, proposal_id):
+    """Подтверждение обмена пользователем"""
+    proposal = get_object_or_404(ExchangeProposal, pk=proposal_id)
+    
+    # Проверяем, что пользователь участвует в обмене
+    if request.user not in [proposal.ad_sender.user, proposal.ad_receiver.user]:
+        messages.error(request, 'У вас нет прав на подтверждение этого обмена')
+        return redirect('proposal_list')
+    
+    # Проверяем, что обмен принят
+    if proposal.status != 'accepted':
+        messages.error(request, 'Обмен должен быть сначала принят')
+        return redirect('proposal_list')
+    
+    if request.method == 'POST':
+        # Подтверждаем обмен от имени текущего пользователя
+        if request.user == proposal.ad_sender.user:
+            proposal.confirm_exchange_by_sender()
+            messages.success(request, 'Вы подтвердили получение товара!')
+        elif request.user == proposal.ad_receiver.user:
+            proposal.confirm_exchange_by_receiver()
+            messages.success(request, 'Вы подтвердили получение товара!')
+        
+        # Проверяем, завершился ли обмен
+        if proposal.is_exchanged():
+            messages.success(request, 'Обмен успешно завершен! Товар перемещен в архив.')
+        
+        return redirect('proposal_list')
+    
+    # GET запрос - показываем форму подтверждения
+    context = {
+        'proposal': proposal,
+        'user_can_confirm': proposal.can_confirm_exchange(request.user)
+    }
+    return render(request, 'ads/confirm_exchange.html', context)
