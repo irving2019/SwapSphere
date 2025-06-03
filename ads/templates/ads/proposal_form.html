@@ -1,0 +1,97 @@
+{% extends 'ads/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Предложить обмен</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>Вы предлагаете обмен на товар:</h5>                        <div class="d-flex align-items-center">
+                            {% if ad_receiver.get_image_url %}
+                                <img src="{{ ad_receiver.get_image_url }}" alt="{{ ad_receiver.title }}" class="img-thumbnail me-3" style="width: 80px; height: 80px; object-fit: cover;">
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-1">{{ ad_receiver.title }}</h6>
+                                <p class="mb-1 text-muted">{{ ad_receiver.description|truncatewords:10 }}</p>
+                                <small class="text-muted">Владелец: {{ ad_receiver.user.get_full_name|default:ad_receiver.user.username }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="ad_sender" class="form-label">Выберите ваш товар для обмена:</label>
+                            <select name="ad_sender" id="ad_sender" class="form-select" required>
+                                <option value="">-- Выберите товар --</option>
+                                {% for ad in user_ads %}
+                                    <option value="{{ ad.id }}">{{ ad.title }} - {{ ad.get_condition_display }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if not user_ads %}
+                                <div class="alert alert-warning mt-2">
+                                    У вас нет активных объявлений для обмена. 
+                                    <a href="{% url 'ad_create' %}" class="alert-link">Создайте объявление</a> сначала.
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.message.id_for_label }}" class="form-label">Сообщение (необязательно):</label>
+                            {{ form.message }}
+                            {% if form.message.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.message.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Добавьте дополнительную информацию или условия обмена</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'ad_detail' ad_receiver.id %}" class="btn btn-secondary">Отмена</a>
+                            {% if user_ads %}
+                                <button type="submit" class="btn btn-primary">Отправить предложение</button>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Ваши товары</h5>
+                </div>
+                <div class="card-body">
+                    {% if user_ads %}
+                        {% for ad in user_ads %}
+                            <div class="border rounded p-2 mb-2">
+                                <div class="d-flex align-items-center">
+                                    {% if ad.image %}
+                                        <img src="{{ ad.image }}" alt="{{ ad.title }}" class="img-thumbnail me-2" style="width: 50px; height: 50px; object-fit: cover;">
+                                    {% endif %}
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">{{ ad.title }}</h6>
+                                        <small class="text-muted">{{ ad.get_condition_display }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">У вас пока нет активных объявлений.</p>
+                        <a href="{% url 'ad_create' %}" class="btn btn-sm btn-outline-primary">Создать объявление</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

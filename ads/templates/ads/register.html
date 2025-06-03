@@ -1,0 +1,131 @@
+{% extends 'ads/base.html' %}
+
+{% block title %}Регистрация - SwapSphere{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="text-center mb-0">Регистрация</h3>
+            </div>            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-3">Основная информация</h6>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">Имя пользователя *</label>
+                                {{ form.username }}
+                                {% if form.username.errors %}
+                                    <div class="text-danger small">
+                                        {{ form.username.errors }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Обязательное поле. Не более 150 символов.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">Email *</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="text-danger small">
+                                        {{ form.email.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">Имя</label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="text-danger small">
+                                        {{ form.first_name.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">Фамилия</label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="text-danger small">
+                                        {{ form.last_name.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.phone_number.id_for_label }}" class="form-label">Номер телефона</label>
+                                {{ form.phone_number }}
+                                {% if form.phone_number.errors %}
+                                    <div class="text-danger small">
+                                        {{ form.phone_number.errors }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Для связи с другими пользователями</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-muted mb-3">Фотография профиля</h6>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.avatar.id_for_label }}" class="form-label">Загрузить фото</label>
+                                {{ form.avatar }}
+                                {% if form.avatar.errors %}
+                                    <div class="text-danger small">
+                                        {{ form.avatar.errors }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Максимальный размер: 5MB. Форматы: JPG, PNG, GIF</div>
+                            </div>
+                            
+                            <h6 class="text-muted mb-3">Пароль</h6>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label">Пароль *</label>
+                                {{ form.password1 }}
+                                {% if form.password1.errors %}
+                                    <div class="text-danger small">
+                                        {{ form.password1.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label">Подтверждение пароля *</label>
+                                {{ form.password2 }}
+                                {% if form.password2.errors %}
+                                    <div class="text-danger small">
+                                        {{ form.password2.errors }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">Введите тот же пароль для подтверждения.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Зарегистрироваться
+                        </button>
+                    </div>
+                </form>
+                
+                <div class="text-center mt-3">
+                    <p>Уже есть аккаунт? <a href="{% url 'login' %}">Войти</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

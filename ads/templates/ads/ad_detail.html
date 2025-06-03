@@ -1,0 +1,350 @@
+{% extends 'ads/base.html' %}
+
+{% block title %}{{ ad.title }} - SwapSphere{% endblock %}
+
+{% block content %}
+<div class="row">    <div class="col-md-8">
+        <div class="card">
+            {% if ad.get_all_images %}
+                {% if ad.get_all_images|length > 1 %}
+                    <!-- Карусель для множественных изображений -->
+                    <div id="adImageCarousel" class="carousel slide" data-bs-ride="carousel">
+                        <div class="carousel-inner">
+                            {% for image in ad.get_all_images %}
+                                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                                    <img src="{{ image.url }}" class="d-block w-100" alt="{{ ad.title }}" style="height: 400px; object-fit: cover;">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Кнопки навигации -->
+                        <button class="carousel-control-prev" type="button" data-bs-target="#adImageCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Предыдущее</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#adImageCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Следующее</span>
+                        </button>
+                        
+                        <!-- Индикаторы -->
+                        <div class="carousel-indicators">
+                            {% for image in ad.get_all_images %}
+                                <button type="button" data-bs-target="#adImageCarousel" data-bs-slide-to="{{ forloop.counter0 }}" 
+                                        {% if forloop.first %}class="active" aria-current="true"{% endif %} 
+                                        aria-label="Слайд {{ forloop.counter }}"></button>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Счетчик изображений -->
+                        <div class="position-absolute top-0 end-0 bg-dark bg-opacity-75 text-white px-3 py-2 rounded-bottom-start">
+                            <i class="fas fa-images"></i> {{ ad.get_all_images|length }}
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Одно изображение -->
+                    <img src="{{ ad.get_main_image_url }}" class="card-img-top" alt="{{ ad.title }}" style="height: 400px; object-fit: cover;">
+                {% endif %}
+            {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 400px;">
+                    <i class="fas fa-image fa-3x text-muted"></i>
+                    <span class="text-muted ms-2">Нет изображения</span>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <h1 class="card-title">{{ ad.title }}</h1>
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Автор:</strong> {{ ad.user.username }}</p>
+                        <p class="mb-1"><strong>Опубликовано:</strong> {{ ad.created_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Категория:</strong> {{ ad.get_category_display }}</p>
+                        <p class="mb-1"><strong>Состояние:</strong> {{ ad.get_condition_display }}</p>
+                    </div>
+                </div>
+                <h5>Описание:</h5>
+                <p class="card-text">{{ ad.description|linebreaks }}</p>                <div class="mt-4">
+                    {% if user.is_authenticated and user != ad.user %}
+                        <a href="{% url 'create_proposal' ad.id %}" class="btn btn-primary">
+                            <i class="fas fa-exchange-alt"></i> Предложить обмен
+                        </a>
+                        <a href="{% url 'send_message' ad.user.id %}" class="btn btn-info">
+                            <i class="fas fa-envelope"></i> Написать сообщение
+                        </a>
+                    {% endif %}
+
+                    {% if user == ad.user %}
+                        <a href="{% url 'ad_update' ad.id %}" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Редактировать
+                        </a>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
+                    {% endif %}
+                    
+                    <a href="{% url 'ad_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Назад к списку
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Информация о продавце</h5>
+            </div>            <div class="card-body text-center">
+                {% if ad.user.userprofile %}
+                    <img src="{{ ad.user.userprofile.get_avatar_url }}" alt="Аватар {{ ad.user.username }}" 
+                         class="rounded-circle mb-3" width="80" height="80" 
+                         style="object-fit: cover; border: 2px solid #e9ecef;">
+                    <h6>{{ ad.user.userprofile.get_full_name }}</h6>
+                {% else %}
+                    <div class="bg-secondary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" 
+                         style="width: 80px; height: 80px; border: 2px solid #e9ecef;">
+                        <i class="fas fa-user fa-2x text-white"></i>
+                    </div>
+                    <h6>{{ ad.user.username }}</h6>
+                {% endif %}
+                <p class="text-muted small">@{{ ad.user.username }}</p>
+                <hr>
+                <p><strong>Дата регистрации:</strong> {{ ad.user.date_joined|date:"d.m.Y" }}</p>
+                {% if ad.user.first_name or ad.user.last_name %}
+                    <p><strong>Имя:</strong> {{ ad.user.first_name }} {{ ad.user.last_name }}</p>
+                {% endif %}            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Секция комментариев -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-comments me-2"></i>Комментарии ({{ comments.count }})</h5>
+            </div>
+            <div class="card-body">
+                <!-- Форма добавления комментария -->
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'add_comment' ad.id %}" class="mb-4">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-10">
+                                {{ comment_form.content }}
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-paper-plane me-1"></i>Отправить
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <hr>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <a href="{% url 'login' %}">Войдите</a>, чтобы оставить комментарий.
+                    </div>
+                {% endif %}
+
+                <!-- Список комментариев -->
+                {% for comment in comments %}
+                    <div class="comment mb-4" id="comment-{{ comment.id }}">
+                        <div class="d-flex">
+                            <!-- Аватар автора комментария -->
+                            <div class="me-3">
+                                {% if comment.author.userprofile.get_avatar_url %}
+                                    <img src="{{ comment.author.userprofile.get_avatar_url }}" 
+                                         alt="{{ comment.author.username }}" 
+                                         class="rounded-circle" 
+                                         style="width: 40px; height: 40px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Содержимое комментария -->
+                            <div class="flex-grow-1">
+                                <div class="bg-light rounded p-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h6 class="mb-0">
+                                            {{ comment.author.userprofile.get_full_name|default:comment.author.username }}
+                                            {% if comment.author == ad.user %}
+                                                <span class="badge bg-primary ms-2">Автор объявления</span>
+                                            {% endif %}
+                                        </h6>
+                                        <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                                    </div>
+                                    <p class="mb-2">{{ comment.content|linebreaks }}</p>
+                                      <!-- Кнопки действий -->
+                                    <div class="d-flex gap-2">
+                                        {% if user.is_authenticated %}
+                                            <button class="btn btn-sm btn-outline-primary reply-btn" 
+                                                    data-comment-id="{{ comment.id }}">
+                                                <i class="fas fa-reply me-1"></i>Ответить
+                                            </button>
+                                        {% endif %}                                        {% if user.is_authenticated and user == comment.author or user == ad.user %}
+                                            <button class="btn btn-sm btn-outline-danger delete-comment-btn" 
+                                                    data-comment-id="{{ comment.id }}">
+                                                <i class="fas fa-trash me-1"></i>Удалить
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Форма ответа (скрыта по умолчанию) -->
+                                {% if user.is_authenticated %}
+                                    <div id="reply-form-{{ comment.id }}" class="mt-3" style="display: none;">
+                                        <form method="post" action="{% url 'reply_comment' comment.id %}">
+                                            {% csrf_token %}
+                                            <div class="row">
+                                                <div class="col-md-10">
+                                                    {{ reply_form.content }}
+                                                </div>
+                                                <div class="col-md-2">
+                                                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                        <i class="fas fa-paper-plane me-1"></i>Ответить
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Ответы на комментарий -->
+                                {% for reply in comment.get_replies %}
+                                    <div class="reply mt-3 ms-4">
+                                        <div class="d-flex">
+                                            <!-- Аватар автора ответа -->
+                                            <div class="me-3">
+                                                {% if reply.author.userprofile.get_avatar_url %}
+                                                    <img src="{{ reply.author.userprofile.get_avatar_url }}" 
+                                                         alt="{{ reply.author.username }}" 
+                                                         class="rounded-circle" 
+                                                         style="width: 32px; height: 32px; object-fit: cover;">
+                                                {% else %}
+                                                    <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center" 
+                                                         style="width: 32px; height: 32px;">
+                                                        <i class="fas fa-user text-white" style="font-size: 0.8rem;"></i>
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <!-- Содержимое ответа -->
+                                            <div class="flex-grow-1">
+                                                <div class="bg-white border rounded p-2">
+                                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                                        <h6 class="mb-0" style="font-size: 0.9rem;">
+                                                            {{ reply.author.userprofile.get_full_name|default:reply.author.username }}
+                                                            {% if reply.author == ad.user %}
+                                                                <span class="badge bg-primary ms-1" style="font-size: 0.7rem;">Автор</span>
+                                                            {% endif %}
+                                                        </h6>
+                                                        <small class="text-muted">{{ reply.created_at|date:"d.m.Y H:i" }}</small>
+                                                    </div>
+                                                    <p class="mb-1" style="font-size: 0.9rem;">{{ reply.content|linebreaks }}</p>                                                    {% if user.is_authenticated and user == reply.author or user == ad.user %}
+                                                        <button class="btn btn-sm btn-outline-danger delete-comment-btn" 
+                                                                data-comment-id="{{ reply.id }}" 
+                                                                style="font-size: 0.8rem;">
+                                                            <i class="fas fa-trash me-1"></i>Удалить
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                {% empty %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-comment-slash fa-2x mb-3"></i>
+                        <p>Комментариев пока нет. Будьте первым!</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for delete confirmation -->
+{% if user == ad.user %}
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтвердите удаление</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы действительно хотите удалить объявление "{{ ad.title }}"?</p>
+                <p class="text-muted">Это действие нельзя отменить.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form method="post" action="{% url 'ad_delete' ad.id %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
+        </div>    </div>
+</div>
+{% endif %}
+
+<script>
+// Обработчики событий для кнопок ответа
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработчики для кнопок "Ответить"
+    document.querySelectorAll('.reply-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const commentId = this.getAttribute('data-comment-id');
+            toggleReplyForm(commentId);
+        });
+    });
+    
+    // Обработчики для кнопок "Удалить"
+    document.querySelectorAll('.delete-comment-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const commentId = this.getAttribute('data-comment-id');
+            deleteComment(commentId);
+        });
+    });
+});
+
+function toggleReplyForm(commentId) {
+    const replyForm = document.getElementById('reply-form-' + commentId);
+    if (replyForm.style.display === 'none') {
+        replyForm.style.display = 'block';
+        replyForm.querySelector('textarea').focus();
+    } else {
+        replyForm.style.display = 'none';
+    }
+}
+
+function deleteComment(commentId) {
+    if (confirm('Вы уверены, что хотите удалить этот комментарий?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/comment/${commentId}/delete/`;
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+
+{% endblock %}

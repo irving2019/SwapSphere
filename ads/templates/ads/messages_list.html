@@ -1,0 +1,152 @@
+{% extends 'ads/base.html' %}
+{% load static %}
+
+{% block title %}Сообщения - SwapSphere{% endblock %}
+
+{% block extra_css %}
+<style>
+    .messages-container {
+        background: #fff;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin-top: 2rem;
+    }
+    
+    .conversation-item {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    }
+    
+    .conversation-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: #007bff;
+    }
+    
+    .user-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .unread-badge {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 0.2rem 0.7rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .last-message {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    
+    .conversation-time {
+        color: #9e9e9e;
+        font-size: 0.8rem;
+    }
+    
+    .no-conversations {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .no-conversations i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="messages-container">        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-comments me-2"></i>Мои сообщения
+                {% if unread_messages_count > 0 %}
+                    <span class="badge bg-primary ms-2">
+                        {{ unread_messages_count }} непрочитанных
+                    </span>
+                {% endif %}
+            </h2>
+            <a href="{% url 'blocked_users' %}" class="btn btn-outline-danger">
+                <i class="fas fa-ban me-1"></i>Заблокированные
+            </a>
+        </div>
+        
+        {% if conversations %}
+            {% for conversation in conversations %}
+                <div class="conversation-item">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="user-avatar">
+                                {{ conversation.other_user.username|first|upper }}
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="mb-1">
+                                        <a href="{% url 'conversation_detail' conversation.other_user.id %}" 
+                                           class="text-decoration-none">
+                                            {{ conversation.other_user.username }}
+                                        </a>
+                                        {% if conversation.other_user.userprofile.show_full_name and conversation.other_user.first_name %}
+                                            <small class="text-muted">({{ conversation.other_user.first_name }} {{ conversation.other_user.last_name }})</small>
+                                        {% endif %}
+                                    </h5>
+                                    {% if conversation.last_message %}
+                                        <div class="last-message">
+                                            <strong>{{ conversation.last_message.sender.username }}:</strong>
+                                            {{ conversation.last_message.content|truncatechars:80 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    {% if conversation.unread_count > 0 %}
+                                        <span class="unread-badge">{{ conversation.unread_count }}</span>
+                                    {% endif %}
+                                    {% if conversation.last_message %}
+                                        <div class="conversation-time mt-1">
+                                            {{ conversation.last_message.created_at|date:"d.m.Y H:i" }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'conversation_detail' conversation.other_user.id %}" 
+                               class="btn btn-primary btn-sm">
+                                <i class="fas fa-comments me-1"></i>Открыть
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-conversations">
+                <i class="fas fa-inbox"></i>
+                <h4>У вас пока нет сообщений</h4>
+                <p>Начните общение, написав сообщение другому пользователю через его профиль.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

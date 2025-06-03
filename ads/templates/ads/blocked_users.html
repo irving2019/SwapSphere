@@ -1,0 +1,156 @@
+{% extends 'ads/base.html' %}
+{% load static %}
+
+{% block title %}Заблокированные пользователи - SwapSphere{% endblock %}
+
+{% block extra_css %}
+<style>
+    .blocked-container {
+        background: #fff;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin-top: 2rem;
+    }
+    
+    .blocked-user-item {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    }
+    
+    .blocked-user-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        border-color: #dc3545;
+    }
+    
+    .user-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    
+    .blocked-badge {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    .block-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    
+    .btn-unblock {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        border-radius: 20px;
+        padding: 0.5rem 1rem;
+        font-weight: bold;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-unblock:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+    
+    .no-blocked {
+        text-align: center;
+        padding: 3rem;
+        color: #6c757d;
+    }
+    
+    .no-blocked i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        color: #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="blocked-container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-ban me-2 text-danger"></i>Заблокированные пользователи</h2>
+            <a href="{% url 'messages_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-1"></i>К сообщениям
+            </a>
+        </div>
+        
+        {% if blocked_users %}
+            {% for block in blocked_users %}
+                <div class="blocked-user-item">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="user-avatar">
+                                {{ block.blocked.username|first|upper }}
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="mb-1">
+                                        {{ block.blocked.username }}
+                                        <span class="blocked-badge ms-2">
+                                            <i class="fas fa-ban me-1"></i>Заблокирован
+                                        </span>
+                                    </h5>
+                                    {% if block.blocked.userprofile.show_full_name and block.blocked.first_name %}
+                                        <div class="text-muted mb-1">
+                                            {{ block.blocked.first_name }} {{ block.blocked.last_name }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="block-info">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        Заблокирован: {{ block.created_at|date:"d.m.Y H:i" }}
+                                        {% if block.reason %}
+                                            <br>
+                                            <i class="fas fa-comment me-1"></i>
+                                            Причина: {{ block.reason }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div>
+                                    <a href="{% url 'unblock_user' block.blocked.id %}" 
+                                       class="btn btn-unblock btn-sm"
+                                       onclick="return confirm('Вы уверены, что хотите разблокировать пользователя {{ block.blocked.username }}?')">
+                                        <i class="fas fa-unlock me-1"></i>Разблокировать
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-blocked">
+                <i class="fas fa-user-check"></i>
+                <h4>У вас нет заблокированных пользователей</h4>
+                <p>Здесь будут отображаться пользователи, которых вы заблокировали.</p>
+                <a href="{% url 'messages_list' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-comments me-1"></i>Перейти к сообщениям
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
