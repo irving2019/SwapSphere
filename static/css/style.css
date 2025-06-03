@@ -1,0 +1,138 @@
+/* Custom styles for SwapSphere */
+
+.card-img-top {
+    height: 200px;
+    object-fit: cover;
+}
+
+.ad-detail-image {
+    max-height: 400px;
+    object-fit: contain;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,.1);
+}
+
+.search-form {
+    max-width: 300px;
+}
+
+.filters-card {
+    position: sticky;
+    top: 20px;
+}
+
+.proposal-card {
+    border-left: 4px solid #007bff;
+}
+
+.proposal-card.accepted {
+    border-left-color: #28a745;
+}
+
+.proposal-card.rejected {
+    border-left-color: #dc3545;
+}
+
+/* Стили для аватаров */
+.avatar {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.avatar-large {
+    width: 150px;
+    height: 150px;
+}
+
+.avatar-container {
+    position: relative;
+    display: inline-block;
+}
+
+.avatar-upload-btn {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: #fff;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    cursor: pointer;
+    border: 2px solid #fff;
+    transition: transform 0.2s;
+}
+
+.avatar-upload-btn:hover {
+    transform: scale(1.1);
+}
+
+.avatar-choices {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 1rem;
+    margin-top: 20px;
+}
+
+.avatar-choice {
+    cursor: pointer;
+    padding: 0.5rem;
+    text-align: center;
+    transition: all 0.2s ease;
+    position: relative;
+    padding: 3px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+}
+
+.avatar-choice:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-choice.selected {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+    transform: scale(1.05);
+}
+
+.avatar-choice img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card-img-top {
+        height: 150px;
+    }
+    
+    .ad-detail-image {
+        max-height: 300px;
+    }
+    
+    .filters-card {
+        position: static;
+        margin-bottom: 20px;
+    }
+}

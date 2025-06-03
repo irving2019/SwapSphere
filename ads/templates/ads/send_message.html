@@ -1,0 +1,474 @@
+{% extends 'ads/base.html' %}
+{% load static %}
+
+{% block title %}Отправить сообщение {{ receiver.username }} - SwapSphere{% endblock %}
+
+{% block extra_css %}
+<style>
+    .message-form-container {
+        background: #fff;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        margin-top: 2rem;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+    }
+    
+    .recipient-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .recipient-info::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 100px;
+        height: 100px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+    }
+    
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 1.5rem;
+        border: 3px solid rgba(255,255,255,0.3);
+        transition: transform 0.3s ease;
+    }
+    
+    .user-avatar:hover {
+        transform: scale(1.1);
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+        padding: 0.75rem 1rem;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        transform: translateY(-2px);
+    }
+    
+    .form-label {
+        color: #495057;
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .char-counter {
+        font-size: 0.8rem;
+        color: #6c757d;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+    
+    .char-counter.warning {
+        color: #ffc107;
+    }
+    
+    .char-counter.danger {
+        color: #dc3545;
+    }
+    
+    .btn-send {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: bold;
+        color: white;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-send::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+    
+    .btn-send:hover::before {
+        left: 100%;
+    }
+    
+    .btn-send:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: bold;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancel:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
+        color: white;
+    }
+    
+    .quick-templates {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .template-btn {
+        background: #e9ecef;
+        border: none;
+        border-radius: 20px;
+        padding: 0.4rem 0.8rem;
+        margin: 0.2rem;
+        font-size: 0.85rem;
+        color: #495057;
+        transition: all 0.2s ease;
+    }
+    
+    .template-btn:hover {
+        background: #667eea;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .form-floating {
+        position: relative;
+    }
+    
+    .attachment-area {
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+    }
+    
+    .attachment-area:hover {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.05);
+    }
+    
+    .progress-indicator {
+        position: absolute;
+        top: -3px;
+        left: 0;
+        width: 0%;
+        height: 3px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        border-radius: 0 0 10px 10px;
+        transition: width 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="message-form-container">
+        <div class="progress-indicator" id="progressIndicator"></div>
+        
+        <div class="recipient-info">
+            <div class="d-flex align-items-center">
+                <div class="user-avatar me-3">
+                    {{ receiver.username|first|upper }}
+                </div>
+                <div>
+                    <h4 class="mb-1">Отправить сообщение</h4>
+                    <h5 class="mb-0">{{ receiver.username }}</h5>
+                    {% if receiver.userprofile.show_full_name and receiver.first_name %}
+                        <small>{{ receiver.first_name }} {{ receiver.last_name }}</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Быстрые шаблоны -->
+        <div class="quick-templates">
+            <h6 class="mb-2"><i class="fas fa-magic me-2"></i>Быстрые шаблоны</h6>
+            <button type="button" class="template-btn" data-template="Привет! Меня заинтересовало ваше объявление.">
+                <i class="fas fa-star me-1"></i>Интерес к объявлению
+            </button>
+            <button type="button" class="template-btn" data-template="Здравствуйте! Хотел бы обсудить возможность обмена.">
+                <i class="fas fa-handshake me-1"></i>Предложение обмена
+            </button>
+            <button type="button" class="template-btn" data-template="Добрый день! Можете рассказать подробнее о вашем товаре?">
+                <i class="fas fa-question-circle me-1"></i>Вопрос о товаре
+            </button>
+        </div>
+        
+        <form method="post" id="messageForm">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="{{ form.subject.id_for_label }}" class="form-label fw-bold">
+                    <i class="fas fa-tag me-2"></i>Тема сообщения
+                </label>
+                {{ form.subject }}
+                <div class="char-counter" id="subjectCounter">0 / 200</div>
+                {% if form.subject.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.subject.errors }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                <label for="{{ form.content.id_for_label }}" class="form-label fw-bold">
+                    <i class="fas fa-edit me-2"></i>Сообщение
+                </label>
+                {{ form.content }}
+                <div class="char-counter" id="contentCounter">0 / 2000</div>
+                {% if form.content.errors %}
+                    <div class="text-danger small mt-1">
+                        {{ form.content.errors }}
+                    </div>
+                {% endif %}
+                <div class="form-text">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Напишите ваше сообщение пользователю {{ receiver.username }}
+                </div>
+            </div>
+            
+            <div class="d-flex gap-3 align-items-center">
+                <button type="submit" class="btn btn-send" id="sendBtn">
+                    <i class="fas fa-paper-plane me-2"></i>Отправить сообщение
+                </button>
+                <a href="{% url 'messages_list' %}" class="btn btn-cancel">
+                    <i class="fas fa-times me-2"></i>Отмена
+                </a>
+                <div class="ms-auto">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        <span id="lastSaved">Черновик не сохранен</span>
+                    </small>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const subjectInput = document.querySelector('input[name="subject"]');
+    const contentTextarea = document.querySelector('textarea[name="content"]');
+    const subjectCounter = document.getElementById('subjectCounter');
+    const contentCounter = document.getElementById('contentCounter');
+    const progressIndicator = document.getElementById('progressIndicator');
+    const sendBtn = document.getElementById('sendBtn');
+    const messageForm = document.getElementById('messageForm');
+    const templateBtns = document.querySelectorAll('.template-btn');
+    const lastSavedSpan = document.getElementById('lastSaved');
+    
+    // Конфигурация
+    const MAX_SUBJECT_LENGTH = 200;
+    const MAX_CONTENT_LENGTH = 2000;
+    const DRAFT_KEY = `message_draft_${window.location.pathname}`;
+    
+    // Загрузка черновика
+    function loadDraft() {
+        const draft = localStorage.getItem(DRAFT_KEY);
+        if (draft) {
+            try {
+                const data = JSON.parse(draft);
+                if (data.subject && !subjectInput.value) subjectInput.value = data.subject;
+                if (data.content && !contentTextarea.value) contentTextarea.value = data.content;
+                lastSavedSpan.textContent = `Черновик загружен (${new Date(data.timestamp).toLocaleTimeString()})`;
+                updateCounters();
+                autoResize();
+            } catch (e) {
+                console.log('Ошибка загрузки черновика:', e);
+            }
+        }
+    }
+    
+    // Сохранение черновика
+    function saveDraft() {
+        if (subjectInput.value || contentTextarea.value) {
+            const draft = {
+                subject: subjectInput.value,
+                content: contentTextarea.value,
+                timestamp: Date.now()
+            };
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+            lastSavedSpan.textContent = `Черновик сохранен (${new Date().toLocaleTimeString()})`;
+        }
+    }
+    
+    // Автоизменение размера текстового поля
+    function autoResize() {
+        if (contentTextarea) {
+            contentTextarea.style.height = 'auto';
+            contentTextarea.style.height = Math.max(150, contentTextarea.scrollHeight) + 'px';
+        }
+    }
+    
+    // Обновление счетчиков символов
+    function updateCounters() {
+        if (subjectInput && subjectCounter) {
+            const subjectLength = subjectInput.value.length;
+            subjectCounter.textContent = `${subjectLength} / ${MAX_SUBJECT_LENGTH}`;
+            subjectCounter.className = 'char-counter ' + 
+                (subjectLength > MAX_SUBJECT_LENGTH * 0.9 ? 'danger' : 
+                 subjectLength > MAX_SUBJECT_LENGTH * 0.8 ? 'warning' : '');
+        }
+        
+        if (contentTextarea && contentCounter) {
+            const contentLength = contentTextarea.value.length;
+            contentCounter.textContent = `${contentLength} / ${MAX_CONTENT_LENGTH}`;
+            contentCounter.className = 'char-counter ' + 
+                (contentLength > MAX_CONTENT_LENGTH * 0.9 ? 'danger' : 
+                 contentLength > MAX_CONTENT_LENGTH * 0.8 ? 'warning' : '');
+        }
+        
+        // Обновление прогресс-бара
+        const totalProgress = Math.min(100, 
+            ((subjectInput?.value.length || 0) / MAX_SUBJECT_LENGTH * 20) + 
+            ((contentTextarea?.value.length || 0) / MAX_CONTENT_LENGTH * 80)
+        );
+        progressIndicator.style.width = totalProgress + '%';
+    }
+    
+    // Применение шаблона
+    templateBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const template = this.dataset.template;
+            if (contentTextarea.value === '' || confirm('Заменить текущее сообщение шаблоном?')) {
+                contentTextarea.value = template;
+                autoResize();
+                updateCounters();
+                saveDraft();
+                
+                // Анимация применения
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = '';
+                }, 150);
+            }
+        });
+    });
+    
+    // Обработчики событий
+    if (subjectInput) {
+        subjectInput.addEventListener('input', function() {
+            updateCounters();
+            saveDraft();
+        });
+        
+        // Ограничение длины темы
+        subjectInput.addEventListener('keypress', function(e) {
+            if (this.value.length >= MAX_SUBJECT_LENGTH && e.key !== 'Backspace' && e.key !== 'Delete') {
+                e.preventDefault();
+            }
+        });
+    }
+    
+    if (contentTextarea) {
+        contentTextarea.addEventListener('input', function() {
+            autoResize();
+            updateCounters();
+            saveDraft();
+        });
+        
+        // Ограничение длины содержимого
+        contentTextarea.addEventListener('keypress', function(e) {
+            if (this.value.length >= MAX_CONTENT_LENGTH && e.key !== 'Backspace' && e.key !== 'Delete') {
+                e.preventDefault();
+            }
+        });
+        
+        // Горячие клавиши
+        contentTextarea.addEventListener('keydown', function(e) {
+            // Ctrl+Enter для отправки
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                messageForm.submit();
+            }
+            
+            // Ctrl+S для сохранения черновика
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveDraft();
+            }
+        });
+    }
+    
+    // Обработка отправки формы
+    messageForm.addEventListener('submit', function(e) {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Отправка...';
+        
+        // Удаление черновика после отправки
+        localStorage.removeItem(DRAFT_KEY);
+        
+        // Возврат кнопки в исходное состояние при ошибке
+        setTimeout(() => {
+            if (sendBtn.disabled) {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Отправить сообщение';
+            }
+        }, 10000);
+    });
+    
+    // Предупреждение о несохраненных изменениях
+    window.addEventListener('beforeunload', function(e) {
+        if (subjectInput?.value || contentTextarea?.value) {
+            const message = 'У вас есть несохраненные изменения. Покинуть страницу?';
+            e.returnValue = message;
+            return message;
+        }
+    });
+    
+    // Автосохранение каждые 30 секунд
+    setInterval(saveDraft, 30000);
+    
+    // Инициализация
+    loadDraft();
+    updateCounters();
+    autoResize();
+    
+    // Фокус на поле ввода
+    if (contentTextarea && !contentTextarea.value) {
+        contentTextarea.focus();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,852 @@
+{% extends 'ads/base.html' %}
+
+{% block title %}{{ title }} - SwapSphere{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">{{ title }}</h4>
+            </div>            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
+                        {{ form.title }}
+                        {% for error in form.title.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                        {{ form.description }}
+                        {% for error in form.description.errors %}
+                            <div class="alert alert-danger mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.category.id_for_label }}" class="form-label">{{ form.category.label }}</label>
+                                {{ form.category }}
+                                {% for error in form.category.errors %}
+                                    <div class="alert alert-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.condition.id_for_label }}" class="form-label">{{ form.condition.label }}</label>
+                                {{ form.condition }}
+                                {% for error in form.condition.errors %}
+                                    <div class="alert alert-danger mt-1">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>                    <!-- Existing images section (only for update) -->
+                    {% if existing_images %}
+                    <div class="mb-4">
+                        <label class="form-label">Текущие изображения</label>
+                        <div class="row">
+                            {% for image in existing_images %}
+                            <div class="col-md-3 mb-3">
+                                <div class="card">
+                                    <img src="{{ image.get_image_url }}" class="card-img-top" style="height: 150px; object-fit: cover;" alt="Image">
+                                    <div class="card-body p-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            {% if image.is_main %}
+                                                <small class="text-success"><i class="fas fa-star"></i> Главное</small>
+                                            {% else %}
+                                                <a href="{% url 'set_main_image' ad.pk image.id %}" class="btn btn-sm btn-outline-primary">Сделать главным</a>
+                                            {% endif %}
+                                            <a href="{% url 'delete_ad_image' ad.pk image.id %}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Удалить это изображение?')">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Image formset section -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            {% if existing_images %}Добавить новые изображения{% else %}Изображения товара{% endif %}
+                            <span class="text-muted">(до 5 изображений)</span>
+                        </label>
+                        
+                        {{ image_formset.management_form }}
+                        
+                        <div id="image-formset">
+                            {% for form in image_formset %}
+                            <div class="image-form mb-3" data-form-index="{{ forloop.counter0 }}">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label">
+                                                    <i class="fas fa-upload"></i> Загрузить файл
+                                                </label>
+                                                <div class="drop-zone" data-form-index="{{ forloop.counter0 }}">
+                                                    {{ form.image_file }}
+                                                    <div class="drop-zone-text">
+                                                        <i class="fas fa-cloud-upload-alt fa-2x mb-2"></i>
+                                                        <p class="mb-1">Перетащите файл сюда или <span class="text-primary">выберите файл</span></p>
+                                                        <p class="text-muted small">Максимум: 10MB. Форматы: JPG, PNG, GIF</p>
+                                                    </div>
+                                                </div>
+                                                {% for error in form.image_file.errors %}
+                                                    <div class="alert alert-danger mt-1">{{ error }}</div>
+                                                {% endfor %}
+                                            </div>
+                                            
+                                            <div class="col-md-6">
+                                                <label class="form-label">
+                                                    <i class="fas fa-link"></i> URL изображения
+                                                </label>
+                                                {{ form.image_url }}
+                                                <small class="form-text text-muted">Или введите URL изображения</small>
+                                                {% for error in form.image_url.errors %}
+                                                    <div class="alert alert-danger mt-1">{{ error }}</div>
+                                                {% endfor %}
+                                                
+                                                <div class="form-check mt-2">
+                                                    {{ form.is_main }}
+                                                    <label class="form-check-label" for="{{ form.is_main.id_for_label }}">
+                                                        Главное изображение
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {% if form.DELETE %}
+                                        <div class="mt-2">
+                                            {{ form.DELETE }}
+                                            <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
+                                                <i class="fas fa-trash"></i> Удалить это изображение
+                                            </label>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% for error in form.non_field_errors %}
+                                            <div class="alert alert-danger mt-2">{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <button type="button" id="add-image-form" class="btn btn-outline-primary">
+                            <i class="fas fa-plus"></i> Добавить еще изображение
+                        </button>
+                        
+                        {% if image_formset.non_form_errors %}
+                            {% for error in image_formset.non_form_errors %}
+                                <div class="alert alert-danger mt-2">{{ error }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    </div><div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'ad_list' %}" class="btn btn-secondary me-md-2">Отмена</a>
+                        <button type="submit" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.drop-zone {
+    position: relative;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+    border-color: #0d6efd;
+    background-color: #e7f3ff;
+}
+
+.drop-zone input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.drop-zone-text {
+    pointer-events: none;
+}
+
+.drop-zone.has-file {
+    border-color: #28a745;
+    background-color: #d4edda;
+}
+
+.file-preview {
+    margin-top: 15px;
+    display: none;
+    position: relative;
+}
+
+.file-preview.active {
+    display: block;
+}
+
+.preview-thumbnail {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #dee2e6;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.preview-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-file-icon {
+    color: #6c757d;
+    font-size: 2rem;
+}
+
+.preview-remove {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: white;
+    border: 2px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+}
+
+.preview-remove:hover {
+    background: #c82333;
+    transform: scale(1.1);
+}
+
+.preview-info {
+    margin-top: 8px;
+    text-align: center;
+}
+
+.preview-filename {
+    font-size: 0.85rem;
+    color: #495057;
+    word-break: break-word;
+    max-width: 120px;
+}
+
+.preview-status {
+    font-size: 0.75rem;
+    color: #28a745;
+    margin-top: 2px;
+}
+
+.drop-zone.has-file .drop-zone-text {
+    display: none;
+}
+
+.drop-zone.has-file {
+    border: 2px solid #28a745;
+    background-color: #f8fff9;
+    animation: successPulse 0.5s ease-in-out;
+}
+
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+.preview-thumbnail {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #dee2e6;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    0% { 
+        opacity: 0; 
+        transform: translateY(20px) scale(0.9); 
+    }
+    100% { 
+        opacity: 1; 
+        transform: translateY(0) scale(1); 
+    }
+}
+
+.drop-zone.dragover {
+    border-color: #007bff;
+    background-color: #f0f8ff;
+    transform: scale(1.02);
+    transition: all 0.2s ease;
+}
+
+.drop-zone {
+    transition: all 0.2s ease;
+}
+
+.preview-remove {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: white;
+    border: 2px solid white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.2s;
+    opacity: 0.8;
+}
+
+.preview-remove:hover {
+    background: #c82333;
+    transform: scale(1.1);
+    opacity: 1;
+}
+
+.upload-progress {
+    margin-top: 10px;
+    display: none;
+}
+
+.upload-progress.active {
+    display: block;
+}
+
+.progress-bar-custom {
+    background: linear-gradient(90deg, #28a745, #20c997);
+    transition: width 0.3s ease;
+}
+
+.multiple-files-indicator {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: #007bff;
+    color: white;
+    border-radius: 10px;
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.drop-zone-enhanced {
+    position: relative;
+}
+
+.file-count-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background: #28a745;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let formCount = parseInt(document.querySelector('#id_form-TOTAL_FORMS').value);
+    const maxForms = 5;
+    
+    // Initialize existing drop zones
+    initializeDropZones();
+    
+    // Add new form functionality
+    document.getElementById('add-image-form').addEventListener('click', function() {
+        if (formCount < maxForms) {
+            addImageForm();
+        } else {
+            alert('Максимальное количество изображений: ' + maxForms);
+        }
+    });
+    
+    function initializeDropZones() {
+        document.querySelectorAll('.drop-zone').forEach(function(dropZone) {
+            const formIndex = dropZone.getAttribute('data-form-index');
+            const fileInput = dropZone.querySelector(`#id_form-${formIndex}-image_file`);
+            const urlInput = document.querySelector(`#id_form-${formIndex}-image_url`);
+            
+            if (fileInput && urlInput) {
+                setupDropZone(dropZone, fileInput, urlInput, formIndex);
+            }
+        });
+    }
+    
+    function setupDropZone(dropZone, fileInput, urlInput, formIndex) {
+        // Drag and drop functionality
+        dropZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        
+        dropZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+        });        dropZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // Handle multiple files
+                if (files.length === 1) {
+                    fileInput.files = files;
+                    handleFileSelect(files[0], dropZone, formIndex);
+                    urlInput.value = ''; // Clear URL when file is dropped
+                } else {
+                    // Multiple files - handle first file and auto-create new forms for others
+                    handleMultipleFiles(files, dropZone, fileInput, urlInput, formIndex);
+                }
+            }
+        });
+          // File input change
+        fileInput.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0], dropZone, formIndex);
+                urlInput.value = ''; // Clear URL when file is selected
+            } else {
+                // File was deselected
+                clearFilePreview(dropZone);
+                dropZone.classList.remove('has-file');
+            }
+        });
+          // URL input change - clear file input when URL is entered
+        urlInput.addEventListener('input', function() {
+            if (this.value.trim()) {
+                fileInput.value = '';
+                clearFilePreview(dropZone);
+                
+                // Show URL preview if it looks like an image URL
+                if (isImageUrl(this.value.trim())) {
+                    showUrlPreview(this.value.trim(), dropZone, formIndex);
+                }
+            }
+        });
+        
+        // Real-time URL validation
+        urlInput.addEventListener('blur', function() {
+            const url = this.value.trim();
+            if (url && !isValidImageUrl(url)) {
+                showUrlError(urlInput, 'Пожалуйста, введите корректный URL изображения');
+            } else {
+                clearUrlError(urlInput);
+            }
+        });
+    }    function handleFileSelect(file, dropZone, formIndex) {
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowedTypes.includes(file.type)) {
+            alert('Пожалуйста, выберите изображение (JPG, PNG, GIF, WEBP)');
+            return;
+        }
+        
+        // Validate file size (10MB)
+        const maxSize = 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+            alert('Размер файла не должен превышать 10MB');
+            return;
+        }
+        
+        dropZone.classList.add('has-file');
+        
+        // Show loading indicator
+        showLoadingIndicator(dropZone);
+        
+        // Show file preview with slight delay for better UX
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            setTimeout(() => {
+                hideLoadingIndicator(dropZone);
+                showImagePreview(e.target.result, file.name, dropZone, formIndex);
+                updateFileCounter();
+            }, 300); // Small delay for smooth transition
+        };
+        
+        reader.onerror = function() {
+            hideLoadingIndicator(dropZone);
+            alert('Ошибка при чтении файла');
+        };
+        
+        reader.readAsDataURL(file);
+    }
+    
+    function showLoadingIndicator(dropZone) {
+        const existing = dropZone.querySelector('.loading-indicator');
+        if (existing) existing.remove();
+        
+        const loader = document.createElement('div');
+        loader.className = 'loading-indicator';
+        loader.innerHTML = `
+            <div class="d-flex align-items-center justify-content-center p-3">
+                <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <span class="text-primary">Обработка изображения...</span>
+            </div>
+        `;
+        dropZone.appendChild(loader);
+    }
+    
+    function hideLoadingIndicator(dropZone) {
+        const loader = dropZone.querySelector('.loading-indicator');
+        if (loader) {
+            loader.remove();
+        }
+    }
+    
+    function updateFileCounter() {
+        const totalFiles = document.querySelectorAll('.file-preview.active').length;
+        const counterElement = document.getElementById('files-counter');
+        
+        if (!counterElement) {
+            // Create counter if it doesn't exist
+            const counter = document.createElement('div');
+            counter.id = 'files-counter';
+            counter.className = 'file-count-badge';
+            counter.style.display = 'none';
+            
+            const addButton = document.getElementById('add-image-form');
+            addButton.parentNode.insertBefore(counter, addButton);
+        }
+        
+        const counter = document.getElementById('files-counter');
+        if (totalFiles > 0) {
+            counter.textContent = totalFiles;
+            counter.style.display = 'flex';
+        } else {
+            counter.style.display = 'none';
+        }
+    }
+    
+    function showImagePreview(src, filename, dropZone, formIndex) {
+        // Remove existing preview
+        clearFilePreview(dropZone);
+        
+        // Create new preview
+        const preview = document.createElement('div');
+        preview.className = 'file-preview active';
+        
+        const thumbnail = document.createElement('div');
+        thumbnail.className = 'preview-thumbnail';
+        
+        if (src) {
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = 'Preview';
+            thumbnail.appendChild(img);
+        } else {
+            const icon = document.createElement('i');
+            icon.className = 'fas fa-file preview-file-icon';
+            thumbnail.appendChild(icon);
+        }
+        
+        // Add remove button
+        const removeBtn = document.createElement('div');
+        removeBtn.className = 'preview-remove';
+        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        removeBtn.title = 'Удалить изображение';
+        removeBtn.addEventListener('click', function() {
+            removeFilePreview(dropZone, formIndex);
+        });
+        
+        thumbnail.appendChild(removeBtn);
+        preview.appendChild(thumbnail);
+        
+        // Add file info
+        const info = document.createElement('div');
+        info.className = 'preview-info';
+        
+        const fileNameDiv = document.createElement('div');
+        fileNameDiv.className = 'preview-filename';
+        fileNameDiv.textContent = filename.length > 15 ? filename.substring(0, 15) + '...' : filename;
+        
+        const statusDiv = document.createElement('div');
+        statusDiv.className = 'preview-status';
+        statusDiv.innerHTML = '<i class="fas fa-check"></i> Готово к загрузке';
+        
+        info.appendChild(fileNameDiv);
+        info.appendChild(statusDiv);
+        preview.appendChild(info);
+        
+        dropZone.appendChild(preview);
+    }    function removeFilePreview(dropZone, formIndex) {
+        // Clear file input
+        const fileInput = dropZone.querySelector(`#id_form-${formIndex}-image_file`);
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        
+        // Clear preview and reset drop zone
+        clearFilePreview(dropZone);
+        dropZone.classList.remove('has-file');
+        
+        // Update file counter
+        updateFileCounter();
+    }
+    
+    function isImageUrl(url) {
+        return /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
+    }
+    
+    function isValidImageUrl(url) {
+        try {
+            new URL(url);
+            return isImageUrl(url);
+        } catch {
+            return false;
+        }
+    }
+    
+    function showUrlPreview(url, dropZone, formIndex) {
+        // Create a temporary image to test if URL is valid
+        const testImg = new Image();
+        testImg.onload = function() {
+            showImagePreview(url, extractFilenameFromUrl(url), dropZone, formIndex);
+        };
+        testImg.onerror = function() {
+            // If image fails to load, show a placeholder
+            showImagePreview(null, extractFilenameFromUrl(url), dropZone, formIndex);
+        };
+        testImg.src = url;
+    }
+    
+    function extractFilenameFromUrl(url) {
+        try {
+            const urlPath = new URL(url).pathname;
+            const filename = urlPath.split('/').pop();
+            return filename || 'image.jpg';
+        } catch {
+            return 'image.jpg';
+        }
+    }
+    
+    function showUrlError(input, message) {
+        clearUrlError(input);
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'url-error alert alert-danger mt-1';
+        errorDiv.style.fontSize = '0.875rem';
+        errorDiv.textContent = message;
+        input.parentNode.appendChild(errorDiv);
+    }
+      function clearUrlError(input) {
+        const existingError = input.parentNode.querySelector('.url-error');
+        if (existingError) {
+            existingError.remove();
+        }
+    }
+    
+    function handleMultipleFiles(files, currentDropZone, currentFileInput, currentUrlInput, currentFormIndex) {
+        const maxFiles = 5;
+        const currentFormsCount = document.querySelectorAll('.image-form').length;
+        
+        // Check if we can add all files
+        if (currentFormsCount + files.length > maxFiles) {
+            alert(`Можно загрузить максимум ${maxFiles} изображений. У вас уже ${currentFormsCount} форм.`);
+            return;
+        }
+        
+        // Handle first file in current form
+        if (files.length > 0) {
+            currentFileInput.files = createSingleFileList(files[0]);
+            handleFileSelect(files[0], currentDropZone, currentFormIndex);
+            currentUrlInput.value = '';
+        }
+        
+        // Create new forms for remaining files
+        for (let i = 1; i < files.length; i++) {
+            if (document.querySelectorAll('.image-form').length >= maxFiles) {
+                break;
+            }
+            
+            // Add new form
+            addImageForm();
+            
+            // Get the newly created form
+            const newForms = document.querySelectorAll('.image-form');
+            const newForm = newForms[newForms.length - 1];
+            const newDropZone = newForm.querySelector('.drop-zone');
+            const newFileInput = newForm.querySelector('[id$="-image_file"]');
+            const newUrlInput = newForm.querySelector('[id$="-image_url"]');
+            
+            if (newFileInput && newDropZone) {
+                newFileInput.files = createSingleFileList(files[i]);
+                const newFormIndex = newForm.getAttribute('data-form-index');
+                handleFileSelect(files[i], newDropZone, newFormIndex);
+                if (newUrlInput) {
+                    newUrlInput.value = '';
+                }
+            }
+        }
+        
+        // Show success message
+        if (files.length > 1) {
+            showSuccessMessage(`Загружено ${files.length} изображений!`);
+        }
+    }
+    
+    function createSingleFileList(file) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        return dt.files;
+    }
+    
+    function showSuccessMessage(message) {
+        // Remove existing success message
+        const existingMsg = document.querySelector('.upload-success-message');
+        if (existingMsg) {
+            existingMsg.remove();
+        }
+        
+        // Create new success message
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'upload-success-message alert alert-success alert-dismissible fade show mt-3';
+        messageDiv.innerHTML = `
+            <i class="fas fa-check-circle"></i> ${message}
+            <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+        `;
+        
+        // Insert after the formset
+        const formset = document.getElementById('image-formset');
+        formset.parentNode.insertBefore(messageDiv, formset.nextSibling);
+        
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.remove();
+            }
+        }, 3000);
+    }
+      function clearFilePreview(dropZone) {
+        const preview = dropZone.querySelector('.file-preview');
+        if (preview) {
+            preview.remove();
+        }
+        dropZone.classList.remove('has-file');
+    }
+    
+    function addImageForm() {
+        const formsetDiv = document.getElementById('image-formset');
+        const emptyForm = document.querySelector('#empty-form');
+        
+        if (!emptyForm) {
+            // Create a template for new forms
+            const template = document.querySelector('.image-form').cloneNode(true);
+            const newForm = template.cloneNode(true);
+            
+            // Update form indices
+            newForm.setAttribute('data-form-index', formCount);
+            newForm.innerHTML = newForm.innerHTML.replace(/form-\d+/g, `form-${formCount}`);
+            newForm.innerHTML = newForm.innerHTML.replace(/id_form-\d+/g, `id_form-${formCount}`);
+            
+            // Clear values
+            newForm.querySelectorAll('input').forEach(input => {
+                if (input.type !== 'checkbox') {
+                    input.value = '';
+                }
+                if (input.type === 'checkbox') {
+                    input.checked = false;
+                }
+            });
+            
+            // Add remove button
+            const cardBody = newForm.querySelector('.card-body');
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-outline-danger btn-sm mt-2';
+            removeBtn.innerHTML = '<i class="fas fa-times"></i> Удалить';
+            removeBtn.addEventListener('click', function() {
+                newForm.remove();
+                updateFormCount();
+            });
+            cardBody.appendChild(removeBtn);
+            
+            formsetDiv.appendChild(newForm);
+            
+            // Initialize drop zone for new form
+            const newDropZone = newForm.querySelector('.drop-zone');
+            const newFileInput = newForm.querySelector(`[id$="-image_file"]`);
+            const newUrlInput = newForm.querySelector(`[id$="-image_url"]`);
+            
+            if (newDropZone && newFileInput && newUrlInput) {
+                newDropZone.setAttribute('data-form-index', formCount);
+                setupDropZone(newDropZone, newFileInput, newUrlInput, formCount);
+            }
+            
+            formCount++;
+            updateFormCount();
+        }
+    }
+    
+    function updateFormCount() {
+        document.querySelector('#id_form-TOTAL_FORMS').value = document.querySelectorAll('.image-form').length;
+        
+        // Hide/show add button based on form count
+        const addButton = document.getElementById('add-image-form');
+        if (document.querySelectorAll('.image-form').length >= maxForms) {
+            addButton.style.display = 'none';
+        } else {
+            addButton.style.display = 'inline-block';
+        }
+    }
+});
+</script>
+{% endblock %}

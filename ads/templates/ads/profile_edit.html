@@ -1,0 +1,192 @@
+{% extends 'ads/base.html' %}
+{% load static %}
+
+{% block title %}Редактировать профиль - SwapSphere{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">
+                    <i class="fas fa-user-edit"></i> Редактировать профиль
+                </h3>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                      <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Основная информация</h5>
+                            
+                            <div class="mb-3">
+                                <label for="{{ user_form.first_name.id_for_label }}" class="form-label">Имя</label>
+                                {{ user_form.first_name }}
+                                {% if user_form.first_name.errors %}
+                                    <div class="text-danger small">{{ user_form.first_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ user_form.last_name.id_for_label }}" class="form-label">Фамилия</label>
+                                {{ user_form.last_name }}
+                                {% if user_form.last_name.errors %}
+                                    <div class="text-danger small">{{ user_form.last_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ user_form.email.id_for_label }}" class="form-label">Email</label>
+                                {{ user_form.email }}
+                                {% if user_form.email.errors %}
+                                    <div class="text-danger small">{{ user_form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ profile_form.phone_number.id_for_label }}" class="form-label">Номер телефона</label>
+                                {{ profile_form.phone_number }}
+                                {% if profile_form.phone_number.errors %}
+                                    <div class="text-danger small">{{ profile_form.phone_number.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ profile_form.city.id_for_label }}" class="form-label">Город</label>
+                                {{ profile_form.city }}
+                                {% if profile_form.city.errors %}
+                                    <div class="text-danger small">{{ profile_form.city.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ profile_form.birth_date.id_for_label }}" class="form-label">Дата рождения</label>
+                                {{ profile_form.birth_date }}
+                                {% if profile_form.birth_date.errors %}
+                                    <div class="text-danger small">{{ profile_form.birth_date.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ profile_form.bio.id_for_label }}" class="form-label">О себе</label>
+                                {{ profile_form.bio }}
+                                {% if profile_form.bio.errors %}
+                                    <div class="text-danger small">{{ profile_form.bio.errors }}</div>
+                                {% endif %}
+                            </div>
+                              <h6 class="mb-3">Настройки приватности</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        {{ profile_form.show_phone }}
+                                        <label class="form-check-label" for="{{ profile_form.show_phone.id_for_label }}">
+                                            <i class="fas fa-phone text-muted me-1"></i>Показывать номер телефона
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        {{ profile_form.show_email }}
+                                        <label class="form-check-label" for="{{ profile_form.show_email.id_for_label }}">
+                                            <i class="fas fa-envelope text-muted me-1"></i>Показывать email
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        {{ profile_form.show_full_name }}
+                                        <label class="form-check-label" for="{{ profile_form.show_full_name.id_for_label }}">
+                                            <i class="fas fa-user text-muted me-1"></i>Показывать полное имя
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mb-2">
+                                        {{ profile_form.show_birth_date }}
+                                        <label class="form-check-label" for="{{ profile_form.show_birth_date.id_for_label }}">
+                                            <i class="fas fa-birthday-cake text-muted me-1"></i>Показывать дату рождения
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="mb-3">Аватар</h5>
+                              <div class="text-center mb-3">
+                                <img src="{{ profile_form.instance.get_avatar_url }}" alt="Текущий аватар" 
+                                     class="rounded-circle mb-2" width="120" height="120" 
+                                     style="object-fit: cover; border: 3px solid #e9ecef;" id="current-avatar">
+                                <div>
+                                    <small class="text-muted">Текущий аватар</small>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ profile_form.avatar.id_for_label }}" class="form-label">Загрузить новый аватар</label>
+                                {{ profile_form.avatar }}
+                                {% if profile_form.avatar.errors %}
+                                    <div class="text-danger small">{{ profile_form.avatar.errors }}</div>
+                                {% endif %}
+                                <div class="form-text">Максимальный размер: 5MB. Поддерживаемые форматы: JPG, PNG, GIF</div>
+                            </div>
+                              <div class="mb-3">
+                                <label class="form-label">Или выберите стандартный аватар</label>
+                                <div class="row">
+                                    {% for value, label in profile_form.default_avatar.field.choices %}
+                                        <div class="col-4 text-center mb-2">
+                                            <div class="form-check">
+                                                <input type="radio" 
+                                                       name="{{ profile_form.default_avatar.name }}" 
+                                                       value="{{ value }}" 
+                                                       id="id_default_avatar_{{ forloop.counter0 }}"
+                                                       class="form-check-input"
+                                                       {% if profile_form.instance.default_avatar == value %}checked{% endif %}>                                <label for="id_default_avatar_{{ forloop.counter0 }}" class="form-check-label">
+                                                    <img src="{% static 'images/avatars/default/' %}{{ value }}" 
+                                                         alt="{{ label }}" class="rounded-circle" width="50" height="50"
+                                                         style="object-fit: cover; cursor: pointer;">
+                                                    <br><small>{{ label }}</small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if profile_form.default_avatar.errors %}
+                                    <div class="text-danger small">{{ profile_form.default_avatar.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'profile' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Отмена
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Сохранить изменения
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('avatar-upload').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const currentAvatar = document.getElementById('current-avatar');
+            currentAvatar.innerHTML = '<img src="' + e.target.result + '" alt="Предпросмотр" class="rounded-circle" width="120" height="120">';
+        }
+        reader.readAsDataURL(file);
+    }
+});
+</script>
+{% endblock %}

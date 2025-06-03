@@ -1,5 +1,53 @@
-Django>=4.0
-djangorestframework>=3.14.0
-Pillow>=10.0.0
-pytest-django>=4.5.2
-psycopg2-binary>=2.9.9
+# Django фреймворк и основные зависимости
+Django==4.2.21
+djangorestframework==3.16.0
+asgiref==3.8.1
+sqlparse==0.5.3
+tzdata==2025.2
+
+# База данных
+psycopg2-binary==2.9.10
+
+# Обработка изображений
+Pillow==11.2.1
+
+# Формы и UI
+django-crispy-forms==2.4
+crispy-bootstrap5==2025.4
+
+# Переменные окружения
+python-decouple==3.8
+
+# WSGI сервер для продакшн
+gunicorn==23.0.0
+
+# Тестирование
+pytest-django==4.11.1
+pytest==8.3.5
+iniconfig==2.1.0
+packaging==25.0
+pluggy==1.6.0
+
+# Кеширование
+django-redis==5.4.0
+redis==6.2.0
+
+# Безопасность
+django-cors-headers==4.7.0
+
+# Дополнительные утилиты
+django-extensions==4.1
+requests==2.32.3
+urllib3==2.4.0
+certifi==2025.4.26
+charset-normalizer==3.4.2
+idna==3.10
+
+# Мониторинг и логирование
+sentry-sdk==2.29.1
+
+# Статические файлы для продакшн
+whitenoise==6.9.0
+
+# Система управления цветом в консоли
+colorama==0.4.6
