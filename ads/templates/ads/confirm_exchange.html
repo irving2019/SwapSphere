@@ -1,0 +1,301 @@
+{% extends 'ads/base.html' %}
+{% load static %}
+
+{% block title %}Подтверждение обмена - SwapSphere{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirm-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+    
+    .confirm-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+        border: none;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .exchange-preview {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin: 1.5rem 0;
+    }
+    
+    .item-card {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .confirm-btn {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 1rem 2rem;
+        font-weight: bold;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .confirm-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+    
+    .cancel-btn {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 1rem 2rem;
+        font-weight: bold;
+        color: white;
+    }
+    
+    .warning-alert {
+        background: linear-gradient(135deg, #ffc107 0%, #ffb300 100%);
+        border: none;
+        border-radius: 15px;
+        color: #212529;
+    }
+    
+    .exchange-arrow {
+        font-size: 3rem;
+        color: #28a745;
+        animation: pulse 2s infinite;
+    }
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .status-confirmed {
+        background: #d4edda !important;
+    }
+    
+    .status-pending {
+        background: #fff3cd !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="confirm-container">
+    <div class="container">
+        <div class="row">
+            <div class="col-12">
+                <div class="confirm-card">
+                    <div class="card-header border-0 bg-transparent text-center py-4">
+                        <h2 class="mb-0">
+                            <i class="fas fa-handshake me-2 text-success"></i>
+                            Подтверждение обмена
+                        </h2>
+                        <p class="text-muted mt-2">Подтвердите получение товара для завершения обмена</p>
+                    </div>
+                    
+                    <div class="card-body p-4">
+                        {% if user_can_confirm %}
+                            <div class="warning-alert alert mb-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                                    <div>
+                                        <h5 class="mb-1">Внимание!</h5>
+                                        <p class="mb-0">Подтверждайте получение товара только после того, как вы действительно получили его и убедились в его соответствии описанию.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Превью обмена -->
+                        <div class="exchange-preview">
+                            <div class="row align-items-center">
+                                <!-- Ваш товар -->
+                                <div class="col-md-5">
+                                    <div class="item-card">
+                                        <div class="text-center mb-3">
+                                            <h6 class="text-primary">
+                                                {% if user == proposal.ad_sender.user %}
+                                                    Ваш товар
+                                                {% else %}
+                                                    Товар партнера
+                                                {% endif %}
+                                            </h6>
+                                        </div>
+                                        
+                                        {% if proposal.ad_sender.get_main_image_url %}
+                                            <img src="{{ proposal.ad_sender.get_main_image_url }}" 
+                                                 class="img-fluid rounded mb-3" 
+                                                 style="height: 200px; width: 100%; object-fit: cover;">
+                                        {% endif %}
+                                        
+                                        <h5 class="mb-2">{{ proposal.ad_sender.title }}</h5>
+                                        <p class="text-muted mb-2">{{ proposal.ad_sender.get_category_display }}</p>
+                                        <p class="text-muted">Владелец: {{ proposal.ad_sender.user.username }}</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Стрелка обмена -->
+                                <div class="col-md-2 text-center">
+                                    <i class="fas fa-exchange-alt exchange-arrow"></i>
+                                </div>
+                                
+                                <!-- Товар партнера -->
+                                <div class="col-md-5">
+                                    <div class="item-card">
+                                        <div class="text-center mb-3">
+                                            <h6 class="text-success">
+                                                {% if user == proposal.ad_receiver.user %}
+                                                    Ваш товар
+                                                {% else %}
+                                                    Товар партнера
+                                                {% endif %}
+                                            </h6>
+                                        </div>
+                                        
+                                        {% if proposal.ad_receiver.get_main_image_url %}
+                                            <img src="{{ proposal.ad_receiver.get_main_image_url }}" 
+                                                 class="img-fluid rounded mb-3" 
+                                                 style="height: 200px; width: 100%; object-fit: cover;">
+                                        {% endif %}
+                                        
+                                        <h5 class="mb-2">{{ proposal.ad_receiver.title }}</h5>
+                                        <p class="text-muted mb-2">{{ proposal.ad_receiver.get_category_display }}</p>
+                                        <p class="text-muted">Владелец: {{ proposal.ad_receiver.user.username }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                          <!-- Статус подтверждений -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center p-3 rounded 
+                                     {% if proposal.sender_confirmed_exchange %}status-confirmed{% else %}status-pending{% endif %}">
+                                    <i class="fas {% if proposal.sender_confirmed_exchange %}fa-check-circle text-success{% else %}fa-clock text-warning{% endif %} fa-2x me-3"></i>
+                                    <div>
+                                        <h6 class="mb-0">{{ proposal.ad_sender.user.username }}</h6>
+                                        <small class="{% if proposal.sender_confirmed_exchange %}text-success{% else %}text-warning{% endif %}">
+                                            {% if proposal.sender_confirmed_exchange %}Подтвердил получение{% else %}Ожидает подтверждения{% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center p-3 rounded 
+                                     {% if proposal.receiver_confirmed_exchange %}status-confirmed{% else %}status-pending{% endif %}">
+                                    <i class="fas {% if proposal.receiver_confirmed_exchange %}fa-check-circle text-success{% else %}fa-clock text-warning{% endif %} fa-2x me-3"></i>
+                                    <div>
+                                        <h6 class="mb-0">{{ proposal.ad_receiver.user.username }}</h6>
+                                        <small class="{% if proposal.receiver_confirmed_exchange %}text-success{% else %}text-warning{% endif %}">
+                                            {% if proposal.receiver_confirmed_exchange %}Подтвердил получение{% else %}Ожидает подтверждения{% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                          <!-- Кнопки действий -->
+                        <div class="text-center">
+                            {% if user_can_confirm %}
+                                <form method="post" class="d-inline" id="confirmForm">
+                                    {% csrf_token %}
+                                    <button type="button" class="confirm-btn me-3" id="confirmButton">
+                                        <i class="fas fa-check me-2"></i>
+                                        Подтвердить получение товара
+                                    </button>
+                                </form>
+                                
+                                <!-- Модальное окно подтверждения -->
+                                <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-warning">
+                                                <h5 class="modal-title" id="confirmModalLabel">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                                    Подтверждение получения товара
+                                                </h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p class="mb-1">Вы собираетесь подтвердить получение товара:</p>
+                                                <p class="fw-bold mb-3">{{ proposal.ad_receiver.title if user == proposal.ad_sender.user else proposal.ad_sender.title }}</p>
+                                                <div class="alert alert-warning">
+                                                    <i class="fas fa-info-circle me-2"></i>
+                                                    После подтверждения это действие нельзя будет отменить.
+                                                </div>
+                                                <p>Подтвердите только в том случае, если вы:</p>
+                                                <ul>
+                                                    <li>Действительно получили товар</li>
+                                                    <li>Убедились в его соответствии описанию</li>
+                                                    <li>Удовлетворены качеством товара</li>
+                                                </ul>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                <button type="button" class="btn btn-success" id="finalConfirmBtn">
+                                                    <i class="fas fa-check me-2"></i>
+                                                    Подтверждаю получение
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                {% if proposal.is_exchanged %}
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        Обмен успешно завершен!
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Вы уже подтвердили получение товара. Ожидаем подтверждения от партнера.
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            
+                            <a href="{% url 'proposal_list' %}" class="cancel-btn">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Вернуться к предложениям
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Элементы для обработки подтверждения
+        const confirmButton = document.getElementById('confirmButton');
+        const finalConfirmBtn = document.getElementById('finalConfirmBtn');
+        const confirmForm = document.getElementById('confirmForm');
+        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        
+        // Открываем модальное окно при нажатии на кнопку подтверждения
+        if (confirmButton) {
+            confirmButton.addEventListener('click', function() {
+                confirmModal.show();
+            });
+        }
+        
+        // Обработка окончательного подтверждения
+        if (finalConfirmBtn) {
+            finalConfirmBtn.addEventListener('click', function() {
+                confirmForm.submit();
+            });
+        }
+    });
+</script>
+{% endblock %}

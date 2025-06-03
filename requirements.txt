@@ -4,12 +4,15 @@ djangorestframework==3.16.0
 asgiref==3.8.1
 sqlparse==0.5.3
 tzdata==2025.2
+django-filter==25.1
 
 # База данных
 psycopg2-binary==2.9.10
+dj-database-url==2.2.0
 
 # Обработка изображений
 Pillow==11.2.1
+django-imagekit==5.0.0
 
 # Формы и UI
 django-crispy-forms==2.4
@@ -31,6 +34,7 @@ pluggy==1.6.0
 # Кеширование
 django-redis==5.4.0
 redis==6.2.0
+django-cachalot==2.7.0
 
 # Безопасность
 django-cors-headers==4.7.0
@@ -45,9 +49,12 @@ idna==3.10
 
 # Мониторинг и логирование
 sentry-sdk==2.29.1
+django-debug-toolbar==4.3.0
+django-structlog==7.0.0
 
 # Статические файлы для продакшн
 whitenoise==6.9.0
+django-storages==1.14.2
 
 # Система управления цветом в консоли
 colorama==0.4.6

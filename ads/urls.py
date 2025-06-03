@@ -22,7 +22,9 @@ urlpatterns = [
     path('messages/<int:user_id>/', views.conversation_detail, name='conversation_detail'),
     path('send_message/<int:user_id>/', views.send_message, name='send_message'),    path('block_user/<int:user_id>/', views.block_user, name='block_user'),
     path('unblock_user/<int:user_id>/', views.unblock_user, name='unblock_user'),
-    path('blocked_users/', views.blocked_users, name='blocked_users'),
-    # API для уведомлений
+    path('blocked_users/', views.blocked_users, name='blocked_users'),    # API для уведомлений
     path('api/notifications/', views.notifications_api, name='notifications_api'),
+    # URL для подтверждения обмена и архива
+    path('proposals/archive/', views.proposal_archive, name='proposal_archive'),
+    path('proposal/<int:proposal_id>/confirm/', views.confirm_exchange, name='confirm_exchange'),
 ]

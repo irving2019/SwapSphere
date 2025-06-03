@@ -9,18 +9,16 @@
             <div class="card-header">
                 <h4 class="mb-0">Вход в систему</h4>
             </div>
-            <div class="card-body">
-                <form method="post">
+            <div class="card-body">                <form method="post" autocomplete="on">
                     {% csrf_token %}
-                    
-                    <div class="mb-3">
+                      <div class="mb-3">
                         <label for="id_username" class="form-label">Имя пользователя</label>
-                        <input type="text" class="form-control" name="username" id="id_username" required>
+                        <input type="text" class="form-control" name="username" id="id_username" autocomplete="username" required>
                     </div>
 
                     <div class="mb-3">
                         <label for="id_password" class="form-label">Пароль</label>
-                        <input type="password" class="form-control" name="password" id="id_password" required>
+                        <input type="password" class="form-control" name="password" id="id_password" autocomplete="current-password" required>
                     </div>
 
                     {% if form.errors %}

@@ -53,9 +53,9 @@ RUN python manage.py collectstatic --noinput --clear
 # Открываем порт
 EXPOSE 8000
 
-# Healthcheck
+# Healthcheck (обновлённый)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health/', timeout=10)" || exit 1
+    CMD python -c "import requests; response = requests.get('http://localhost:8000/health/', timeout=10); exit(0) if response.status_code == 200 else exit(1)" || exit 1
 
-# Команда запуска с gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60", "swapsphere.wsgi:application"]
+# Команда запуска с gunicorn (обновлённая с улучшенными настройками производительности)
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--worker-class", "gthread", "--threads", "2", "--timeout", "120", "--keep-alive", "5", "--access-logfile", "-", "--error-logfile", "-", "swapsphere.wsgi:application"]

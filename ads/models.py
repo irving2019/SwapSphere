@@ -211,10 +211,14 @@ class ExchangeProposal(models.Model):
                             verbose_name='Статус')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
-    
-    # Поля для отслеживания прочитанности
+      # Поля для отслеживания прочитанности
     is_read_by_sender = models.BooleanField(default=True, verbose_name='Прочитано отправителем')
     is_read_by_receiver = models.BooleanField(default=False, verbose_name='Прочитано получателем')
+    
+    # Поля для подтверждения обмена
+    sender_confirmed_exchange = models.BooleanField(default=False, verbose_name='Отправитель подтвердил обмен')
+    receiver_confirmed_exchange = models.BooleanField(default=False, verbose_name='Получатель подтвердил обмен')
+    exchange_completed_at = models.DateTimeField(null=True, blank=True, verbose_name='Дата завершения обмена')
 
     class Meta:
         verbose_name = 'Предложение обмена'
@@ -226,6 +230,41 @@ class ExchangeProposal(models.Model):
     def can_be_cancelled(self):
         """Может ли предложение быть отменено"""
         return self.status == 'pending'
+    
+    def confirm_exchange_by_sender(self):
+        """Подтверждение обмена отправителем"""
+        self.sender_confirmed_exchange = True
+        self._check_and_complete_exchange()
+        self.save()
+    
+    def confirm_exchange_by_receiver(self):
+        """Подтверждение обмена получателем"""
+        self.receiver_confirmed_exchange = True
+        self._check_and_complete_exchange()
+        self.save()
+    
+    def _check_and_complete_exchange(self):
+        """Проверяет, подтвердили ли обе стороны обмен, и завершает его"""
+        if self.sender_confirmed_exchange and self.receiver_confirmed_exchange and self.status == 'accepted':
+            from django.utils import timezone
+            self.status = 'completed'
+            self.exchange_completed_at = timezone.now()
+    
+    def can_confirm_exchange(self, user):
+        """Может ли пользователь подтвердить обмен"""
+        if self.status != 'accepted':
+            return False
+        
+        if user == self.ad_sender.user and not self.sender_confirmed_exchange:
+            return True
+        elif user == self.ad_receiver.user and not self.receiver_confirmed_exchange:
+            return True
+        
+        return False
+    
+    def is_exchanged(self):
+        """Проверяет, завершен ли обмен"""
+        return self.status == 'completed'
     
     def get_status_display_class(self):
         """Возвращает CSS класс для статуса"""

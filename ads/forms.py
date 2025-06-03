@@ -1,6 +1,8 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+import re
 from .models import Ad, UserProfile, ExchangeProposal, AdComment, PrivateMessage, UserBlock, AdImage
 
 
@@ -27,12 +29,31 @@ class UserRegistrationForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'first_name', 'last_name', 'password1', 'password2']
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['username'].widget.attrs.update({'class': 'form-control'})
-        self.fields['password1'].widget.attrs.update({'class': 'form-control'})
-        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
+        self.fields['username'].widget.attrs.update({'class': 'form-control', 'autocomplete': 'username'})
+        self.fields['password1'].widget.attrs.update({'class': 'form-control', 'autocomplete': 'new-password'})
+        self.fields['password2'].widget.attrs.update({'class': 'form-control', 'autocomplete': 'new-password'})
+        
+        # Изменяем текст подсказки для полей пароля
+        self.fields['password1'].help_text = 'Пароль должен содержать 8-16 символов, может включать буквы разного регистра, цифры и специальные символы'
+        
+    def clean_password1(self):
+        password1 = self.cleaned_data.get('password1')
+        
+        # Проверка длины пароля (от 8 до 16 символов)
+        if len(password1) < 8 or len(password1) > 16:
+            raise ValidationError('Пароль должен содержать от 8 до 16 символов.')
+            
+        # Проверка наличия букв в разном регистре
+        if not (any(c.islower() for c in password1) and any(c.isupper() for c in password1)):
+            raise ValidationError('Пароль должен содержать буквы в верхнем и нижнем регистре.')
+              # Проверка наличия цифр
+        if not any(c.isdigit() for c in password1):
+            raise ValidationError('Пароль должен содержать хотя бы одну цифру.')
+          
+        return password1
 
 
 class UserForm(forms.ModelForm):
@@ -88,10 +109,49 @@ class AdImageForm(forms.ModelForm):
         # Если указаны оба варианта, показать ошибку
         if image_file and image_url:
             raise forms.ValidationError('Выберите либо файл, либо URL, но не оба варианта.')
+          # Проверка размера файла
+        if image_file and image_file.size > 5 * 1024 * 1024:
+            raise forms.ValidationError('Размер файла не должен превышать 5MB.')
         
-        # Проверка размера файла
-        if image_file and image_file.size > 10 * 1024 * 1024:
-            raise forms.ValidationError('Размер файла не должен превышать 10MB.')
+        # Проверка размеров изображения
+        if image_file:
+            try:
+                from PIL import Image as PILImage
+                img = PILImage.open(image_file)
+                # Сохраняем позицию в файле для последующих операций
+                image_file.seek(0)
+                
+                # Проверяем размеры
+                max_size = 500
+                if img.width > max_size or img.height > max_size:
+                    # Масштабируем изображение до максимального размера
+                    img.thumbnail((max_size, max_size))
+                    
+                    # Создаем временный файл для сохранения
+                    import io
+                    from django.core.files.uploadedfile import InMemoryUploadedFile
+                    
+                    output = io.BytesIO()
+                    img_format = image_file.name.split('.')[-1].upper()
+                    if img_format not in ['JPEG', 'JPG', 'PNG', 'GIF']:
+                        img_format = 'JPEG'
+                    
+                    img.save(output, format=img_format)
+                    output.seek(0)
+                    
+                    # Заменяем файл в cleaned_data на масштабированный
+                    cleaned_data['image_file'] = InMemoryUploadedFile(
+                        output,
+                        'ImageField',
+                        f"{image_file.name.split('.')[0]}.{img_format.lower()}",
+                        f'image/{img_format.lower()}',
+                        output.getbuffer().nbytes,
+                        None
+                    )
+            except Exception as e:
+                # Если не удалось обработать изображение, просто логируем ошибку
+                import logging
+                logging.getLogger('django').error(f"Ошибка обработки изображения: {e}")
         
         return cleaned_data
 
@@ -139,11 +199,10 @@ class UserProfileForm(forms.ModelForm):
             'city': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Ваш город'
-            }),
-            'birth_date': forms.DateInput(attrs={
+            }),            'birth_date': forms.DateInput(attrs={
                 'class': 'form-control',
                 'type': 'date'
-            }),
+            }, format='%Y-%m-%d'),
             'show_phone': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),            'show_email': forms.CheckboxInput(attrs={
@@ -151,12 +210,11 @@ class UserProfileForm(forms.ModelForm):
             }),
             'show_full_name': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
-            }),
-            'show_birth_date': forms.CheckboxInput(attrs={
+            }),            'show_birth_date': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
             }),
         }
-
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['avatar'].required = False
@@ -165,7 +223,9 @@ class UserProfileForm(forms.ModelForm):
         self.fields['bio'].required = False
         self.fields['city'].required = False
         self.fields['birth_date'].required = False
-
+          # Устанавливаем правильный формат для даты
+        self.fields['birth_date'].input_formats = ['%Y-%m-%d']
+        
     def clean(self):
         cleaned_data = super().clean()
         avatar = cleaned_data.get('avatar')
@@ -175,7 +235,8 @@ class UserProfileForm(forms.ModelForm):
         if not avatar and not default_avatar:
             cleaned_data['default_avatar'] = 'default1.png'
             
-        if avatar:
+        # Проверяем только если это новый файловый объект, а не существующий ImageFieldFile
+        if avatar and hasattr(avatar, 'content_type'):
             if avatar.size > 5 * 1024 * 1024:  # 5MB
                 raise forms.ValidationError('Размер файла не должен превышать 5MB')
             if not avatar.content_type.startswith('image'):
@@ -250,7 +311,7 @@ from django.forms import formset_factory
 # Создаем формсет для добавления до 5 изображений
 AdImageFormSet = formset_factory(
     AdImageForm, 
-    extra=1,  # Показываем одну пустую форму по умолчанию
+    extra=0,  # Не показываем пустые формы по умолчанию
     max_num=5,  # Максимум 5 изображений
     validate_max=True,
     can_delete=True  # Позволяем удалять изображения

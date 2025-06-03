@@ -5,82 +5,190 @@
 
 {% block extra_css %}
 <style>
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+    }
+    
     .conversation-container {
         background: #fff;
-        border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-radius: 20px;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.15);
         margin-top: 2rem;
         overflow: hidden;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
     }
     
     .conversation-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 1.5rem;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .conversation-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.05)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
     }
     
     .messages-area {
         height: 500px;
         overflow-y: auto;
-        padding: 1rem;
-        background: #f8f9fa;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8f9fc 0%, #f1f3f7 100%);
+        position: relative;
+    }
+    
+    .messages-area::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60"><circle cx="30" cy="30" r="2" fill="rgba(103,58,183,0.03)"/><circle cx="10" cy="10" r="1" fill="rgba(102,126,234,0.03)"/><circle cx="50" cy="50" r="1.5" fill="rgba(118,75,162,0.03)"/></svg>');
+        pointer-events: none;
     }
     
     .message {
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         clear: both;
+        position: relative;
+        z-index: 1;
     }
     
     .message.sent {
         float: right;
-        max-width: 70%;
+        max-width: 75%;
     }
     
     .message.received {
         float: left;
-        max-width: 70%;
+        max-width: 75%;
     }
-    
-    .message-bubble {
-        padding: 1rem;
-        border-radius: 18px;
+      .message-bubble {
+        padding: 1.2rem 1.5rem;
+        border-radius: 25px;
         position: relative;
         word-wrap: break-word;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        max-width: 500px;
+        animation: messageSlide 0.3s ease-out;
+    }
+    
+    @keyframes messageSlide {
+        0% {
+            opacity: 0;
+            transform: translateY(10px) scale(0.98);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    
+    .message-bubble:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
     
     .message.sent .message-bubble {
-        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         margin-left: auto;
+        border-bottom-right-radius: 8px;
     }
     
     .message.received .message-bubble {
-        background: #ffffff;
-        border: 1px solid #e9ecef;
-        color: #333;
-    }
-    
-    .message-time {
+        background: rgba(255,255,255,0.9);
+        border: 1px solid rgba(102,126,234,0.1);
+        color: #2d3748;
+        border-bottom-left-radius: 8px;
+    }      .message-time {
         font-size: 0.75rem;
         opacity: 0.7;
         margin-top: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .message-subject {
+        font-weight: bold;
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        font-size: 0.9rem;
+    }
+    
+    .message.received .message-subject {
+        border-bottom-color: rgba(102,126,234,0.2);
     }
     
     .message.sent .message-time {
         text-align: right;
+        color: rgba(255,255,255,0.8);
     }
     
     .message.received .message-time {
         text-align: left;
+        color: #6c757d;
     }
     
     .reply-form {
-        background: white;
-        border-top: 1px solid #e9ecef;
-        padding: 1.5rem;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fc 100%);
+        border-top: 1px solid rgba(102,126,234,0.1);
+        padding: 2rem;
+        position: relative;
     }
     
-    .user-avatar-small {
+    .reply-form::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(102,126,234,0.3), transparent);
+    }
+    
+    .reply-form .form-control {
+        border-radius: 25px;
+        border: 2px solid rgba(102,126,234,0.1);
+        padding: 1rem 1.5rem;
+        transition: all 0.3s ease;
+        background: rgba(255,255,255,0.9);
+        backdrop-filter: blur(10px);
+    }
+    
+    .reply-form .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102,126,234,0.25);
+        background: #ffffff;
+    }
+    
+    .reply-form .btn {
+        border-radius: 25px;
+        padding: 1rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .reply-form .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+    }
+      .user-avatar-small {
         width: 35px;
         height: 35px;
         border-radius: 50%;
@@ -91,6 +199,16 @@
         color: white;
         font-weight: bold;
         font-size: 0.9rem;
+        overflow: hidden;
+        border: 2px solid rgba(255,255,255,0.3);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .user-avatar-small img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
     }
     
     .block-user-btn {
@@ -221,10 +339,12 @@
             opacity: 1;
         }
     }
-    
-    /* Улучшенные стили для формы */
+      /* Улучшенные стили для формы */
     .reply-form {
         position: relative;
+        background: white;
+        border-top: 1px solid #e9ecef;
+        padding: 2rem;
     }
     
     .reply-form::before {
@@ -235,6 +355,34 @@
         right: 0;
         height: 1px;
         background: linear-gradient(90deg, transparent, #dee2e6, transparent);
+    }
+    
+    .reply-form textarea {
+        min-height: 80px;
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        padding: 1rem 1.5rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        resize: vertical;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    
+    .reply-form textarea:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.1), 0 4px 12px rgba(0,0,0,0.1);
+        transform: none; /* Убираем сдвиг для мобильных */
+    }
+    
+    .reply-form .btn {
+        transition: all 0.3s ease;
+        border: none;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    }
+    
+    .reply-form .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
     }
     
     .form-control:focus {
@@ -271,11 +419,15 @@
 <div class="container">
     <div class="conversation-container">
         <!-- Header -->
-        <div class="conversation-header">
-            <div class="d-flex justify-content-between align-items-center">
+        <div class="conversation-header">            <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <div class="user-avatar-small me-3">
-                        {{ other_user.username|first|upper }}
+                        {% if other_user.userprofile.avatar %}
+                            <img src="{{ other_user.userprofile.avatar.url }}" alt="{{ other_user.username }}" 
+                                 style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">
+                        {% else %}
+                            {{ other_user.username|first|upper }}
+                        {% endif %}
                     </div>
                     <div>
                         <h4 class="mb-0">{{ other_user.username }}</h4>
@@ -297,14 +449,15 @@
           <!-- Messages Area -->
         <div class="messages-area" id="messagesArea">            
             {% for message in messages %}
-                <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}">
-                    <div class="message-bubble">
+                <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}" data-message-id="{{ message.id }}">                    <div class="message-bubble">
                         {% if message.subject and message.subject != "Re: Сообщение от " %}
-                            <div class="fw-bold mb-2">{{ message.subject }}</div>
+                            <div class="message-subject">
+                                <i class="fas fa-tag me-1"></i>{{ message.subject }}
+                            </div>
                         {% endif %}
                         <div class="message-content">{{ message.content|linebreaks }}</div>
                         <div class="message-time">
-                            {{ message.created_at|date:"d.m.Y H:i" }}
+                            <i class="fas fa-clock me-1"></i>{{ message.created_at|date:"d.m.Y H:i" }}
                         </div>
                     </div>
                 </div>
@@ -313,12 +466,11 @@
                     <i class="fas fa-comments fa-3x mb-3"></i>
                     <h5>Начните беседу!</h5>
                     <p>Отправьте первое сообщение этому пользователю.</p>
-                </div>
-            {% endfor %}
+                </div>            {% endfor %}
             
-            <!-- Индикатор набора текста -->
-            <div class="typing-indicator" id="typingIndicator">
-                <span>{{ other_user.username }}</span> печатает
+            <!-- Индикатор набора текста (скрыт по умолчанию) -->
+            <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                <span id="typingUsername">{{ other_user.username }}</span> печатает...
                 <div class="typing-dots">
                     <span></span>
                     <span></span>
@@ -326,26 +478,28 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Reply Form -->
+          <!-- Reply Form -->
         <div class="reply-form">
-            <form method="post">
+            <form method="post" class="d-flex flex-column">
                 {% csrf_token %}
-                <div class="row align-items-end">
-                    <div class="col">
-                        <label for="{{ form.content.id_for_label }}" class="form-label">Ваше сообщение:</label>
+                <div class="mb-3">
+                    <label for="{{ form.content.id_for_label }}" class="form-label fw-bold text-muted">
+                        <i class="fas fa-pen me-1"></i>Ваше сообщение:
+                    </label>
+                    <div class="position-relative">
                         {{ form.content }}
                         {% if form.content.errors %}
                             <div class="text-danger small mt-1">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
                                 {{ form.content.errors }}
                             </div>
                         {% endif %}
                     </div>
-                    <div class="col-auto">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane me-1"></i>Отправить
-                        </button>
-                    </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 shadow">
+                        <i class="fas fa-paper-plane me-2"></i>Отправить
+                    </button>
                 </div>
             </form>
         </div>
@@ -620,13 +774,63 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 5000);
     }
-    
-    // Очистка при уходе со страницы
+      // Очистка при уходе со страницы
     window.addEventListener('beforeunload', () => {
         if (autoUpdateInterval) {
             clearInterval(autoUpdateInterval);
         }
     });
+
+    // Индикатор печатания
+    let typingTimer;
+    const typingIndicator = document.getElementById('typingIndicator');
+    const messageInput = document.getElementById('id_content');
+    
+    if (messageInput) {
+        messageInput.addEventListener('input', () => {
+            // Показываем индикатор только если есть текст
+            if (messageInput.value.trim().length > 0) {
+                showTypingIndicator();
+                
+                // Очищаем предыдущий таймер
+                clearTimeout(typingTimer);
+                
+                // Скрываем индикатор через 2 секунды после остановки печатания
+                typingTimer = setTimeout(() => {
+                    hideTypingIndicator();
+                }, 2000);
+            } else {
+                hideTypingIndicator();
+            }
+        });
+
+        // Скрываем индикатор при отправке сообщения
+        const form = messageInput.closest('form');
+        if (form) {
+            form.addEventListener('submit', () => {
+                hideTypingIndicator();
+                clearTimeout(typingTimer);
+            });
+        }
+    }
+    
+    function showTypingIndicator() {
+        if (typingIndicator) {
+            typingIndicator.style.display = 'flex';
+            setTimeout(() => {
+                typingIndicator.classList.add('show');
+            }, 10);
+        }
+    }
+    
+    function hideTypingIndicator() {
+        if (typingIndicator) {
+            typingIndicator.classList.remove('show');
+            setTimeout(() => {
+                typingIndicator.style.display = 'none';
+            }, 300);
+        }
+    }
 });
 </script>
 {% endblock %}

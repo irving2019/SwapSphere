@@ -108,6 +108,9 @@ celerybeat.pid
 
 # Environments
 .env
+.env.local
+.env.development
+.env.production
 .venv
 env/
 venv/
@@ -152,6 +155,8 @@ Thumbs.db
 # Docker
 .docker/
 docker-compose.override.yml
+.docker-compose.override.yml
+docker-compose.prod.yml
 
 # Temporary files
 *.tmp
@@ -161,3 +166,16 @@ docker-compose.override.yml
 
 # Log files
 *.log
+logs/
+error_logs/
+
+# Node modules (для фронтенд разработки)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage
+.coverage
+coverage/
+.nyc_output

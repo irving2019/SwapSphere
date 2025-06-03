@@ -4,11 +4,15 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">
-                <i class="fas fa-exchange-alt"></i> Мои предложения обмена
-            </h1>
+    <div class="row">        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">
+                    <i class="fas fa-exchange-alt"></i> Мои предложения обмена
+                </h1>
+                <a href="{% url 'proposal_archive' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="fas fa-archive me-2"></i>Архив
+                </a>
+            </div>
 
             <!-- Навигационные вкладки -->
             <ul class="nav nav-tabs mb-4">
@@ -142,17 +146,27 @@
                                     </button>
                                 </form>
                             </div>
-                            {% endif %}                            <!-- Кнопка завершения обмена для принятых предложений -->
+                            {% endif %}                            <!-- Кнопки подтверждения обмена для принятых предложений -->
                             {% if proposal.status == 'accepted' %}
-                                {% if user == proposal.ad_sender.user or user == proposal.ad_receiver.user %}
+                                <!-- Подтверждение получения товара -->
+                                {% if proposal.can_confirm_exchange|add:user %}
+                                <a href="{% url 'confirm_exchange' proposal.id %}" class="btn btn-success btn-sm">
+                                    <i class="fas fa-handshake"></i> Подтвердить получение
+                                </a>
+                                {% elif proposal.sender_confirmed_exchange and proposal.receiver_confirmed_exchange %}
+                                <!-- Кнопка завершения обмена (доступна для обоих пользователей) -->
                                 <form method="post" action="{% url 'update_proposal_status' proposal.id %}" class="d-inline">
                                     {% csrf_token %}
                                     <input type="hidden" name="action" value="complete">
                                     <button type="submit" class="btn btn-primary btn-sm" 
-                                            onclick="return confirm('Вы уверены, что хотите завершить этот обмен? Товары будут переведены в статус &quot;Обменен&quot;.')">
-                                        <i class="fas fa-handshake"></i> Завершить обмен
+                                            onclick="return confirm('Вы уверены, что хотите завершить обмен и отправить его в архив? Товары будут помечены как обмененные.')">
+                                        <i class="fas fa-check-circle"></i> Завершить обмен и отправить в архив
                                     </button>
                                 </form>
+                                {% elif proposal.sender_confirmed_exchange or proposal.receiver_confirmed_exchange %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-clock"></i> Ожидаем подтверждения партнера
+                                </span>
                                 {% endif %}
                             {% endif %}
                             
