@@ -7,6 +7,17 @@ INSTRUCTION.txt
 CLEANUP_SUMMARY.md
 COMMENT_SYSTEM_REPORT.md
 create_test_comments*.py
+READY_TO_DEPLOY.md
+
+# Production и развертывание
+.env.production.local
+ssl/
+*.crt
+*.key
+*.pem
+logs/
+backups/
+*.dump
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
