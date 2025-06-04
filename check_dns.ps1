@@ -1,7 +1,8 @@
-# PowerShell скрипт для проверки DNS настроек swapsphere.ru
+# PowerShell script for checking DNS settings of swapsphere.ru
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-Write-Host "🌐 Проверка DNS настроек для swapsphere.ru" -ForegroundColor Green
-Write-Host "🎯 Ожидаемый IP: 194.58.112.174" -ForegroundColor Yellow
+Write-Host "DNS settings check for swapsphere.ru" -ForegroundColor Green
+Write-Host "Expected IP: 194.58.112.174" -ForegroundColor Yellow
 Write-Host ""
 
 # Проверка основного домена
